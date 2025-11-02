@@ -13,12 +13,21 @@ Dual-head design provides a multi-purpose inference, where the pre-trained and f
 
 Locally served LLM that would be capable of analysing HTTP request / response pair and clasify it from the cyber-security perspective.
 
+## Architecture
+
+![JanusLM Architecture](imgs/architecture.png)
+
+
 ## Key Features
 
 - Based on llama-cpp-python (initial model `Llama-2 13B`)
 - PEFT (LoRA) based on classified request/response pairs.
 - 2 heads - reasoning and classification head
 - Locally hosted via OpenAI API
+
+## Training Data
+
+## Evaluation
 
 ## Pre-Requisities
 
@@ -33,12 +42,6 @@ Locally served LLM that would be capable of analysing HTTP request / response pa
 ## Execution
 
 ```bash
-# Install and run Ollama server
-
+...
 ```
 
-## Training Data
-
-
-
-## Evaluation
