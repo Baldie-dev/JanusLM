@@ -8,6 +8,7 @@ class JanusSequenceClassification(nn.Module):
         self.base = base_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf", torch_dtype="auto", device_map="auto")
         self.classifier = nn.Linear(base_model.config.hidden_size, num_labels)
 
+    # Definition of classification head
     def forward(self, input_ids, attention_mask=None, labels=None):
         # Get the output of last hidden layer
         outputs = self.base.model(

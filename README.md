@@ -31,6 +31,8 @@ Locally served customized LLM that would be capable of analysing HTTP request / 
 
 ## Training
 
+*Note: Training data has been omited from the repository.*
+
 ### 1. Phase:
 LoRA fine-tuning for improved analysis reasoning on request / response pair. To be performed via pre-defined high-quality `x` examples of what kind of analysis/reasoning should be performed.
 
@@ -63,11 +65,13 @@ Definition of terms:
 #### Precision
 
 Calculation of how many marked findings were actually correct:
+
 $$Precision = \frac{TP}{TP+FP}$$
 
 #### Accuracy
 
 Overall correctness:
+
 $$Accuracy = \frac{TP+TN}{TP+FP+TN+FN}$$
 
 ### Results

@@ -1,1 +1,1 @@
-{"input": "Analyze this HTTP request/response: GET /admin ...", "output": "User provided request for admin interface without cookies with valid response, indicating that application can be accesses unauthenticated. Additionally, response was missing HSTS security header."}
+{"input": "GET / HTTP/1.1 ...", "output": ""}
