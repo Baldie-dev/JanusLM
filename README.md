@@ -42,6 +42,10 @@ Data to be prepared in the format:
  "output": "User provided request for admin interface without cookies with valid response, indicating that application can be accesses unauthenticated. Additionally, response was missing HSTS security header."},...]
 ```
 
+*Note: following data were collected on smaller model ollama-3.1-1B, with small subset of data. To be updated...*
+Evolution of loss function during fine-tuning of LoRA adapter for analysing HTTP headers in relation to the content of the page:
+![FineTuning-Training-Loss](imgs/fine-tuning-training-loss.png)
+
 ### 2. Phase:
 *Still in design progress...*
 
@@ -49,9 +53,12 @@ Full MLP (Multi-layered perceptron) training for data classification performed o
 
 Data to be prepared in the format:
 ```json
-[{"input": "Analyze this HTTP request/response: GET /admin ... + reasoning", 
+[{"input": "Analyze this HTTP request/response: GET /admin ... + <analysis from previous phase>", 
  "label": 0}]
 ```
+
+*Note: following data are from smaller model ollama-3.1-1B*
+
 
 ## Evaluation
 
@@ -77,11 +84,12 @@ $$Accuracy = \frac{TP+TN}{TP+FP+TN+FN}$$
 ### Results
 To be done:
 
-1. Comparison of proposal 1 and proposal 2
-2. Evaluation of different models on accuracy.
-3. Evaluation of different size/shape of classification head on accuracy.
-4. Evaluation of reasoning length on accuracy.
-5. Evaluation of fine-tuning approaches / effect of sample size on accuracy.
+1. Comparison of proposal 1 and proposal 2 vs baseline (LLM that is doing natively classification)
+2. Evaluation how big impact does fine-tuning has
+3. Evaluation of different models on accuracy.
+4. Evaluation of different size/shape of classification head on accuracy.
+5. Evaluation of reasoning length on accuracy.
+6. Evaluation of fine-tuning approaches / effect of sample size on accuracy.
 
 ## Pre-Requisities
 

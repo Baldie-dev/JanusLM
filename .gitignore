@@ -1,2 +1,5 @@
+datasets/*
 .env
-datasets/
+lora_adapter/
+lora-out/
+src/__pycache__/

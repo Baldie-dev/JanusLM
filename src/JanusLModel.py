@@ -1,12 +1,16 @@
 from transformers import AutoModelForCausalLM
-import torch
 import torch.nn as nn
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+model_path = os.getenv("MODEL_PATH")
 
 class JanusSequenceClassification(nn.Module):
-    def __init__(self, num_labels):
+    def __init__(self, model, num_labels):
         super().__init__()
-        self.base = base_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf", torch_dtype="auto", device_map="auto")
-        self.classifier = nn.Linear(base_model.config.hidden_size, num_labels)
+        self.base = model
+        self.classifier = nn.Linear(model.config.hidden_size, num_labels)
 
     # Definition of classification head
     def forward(self, input_ids, attention_mask=None, labels=None):
