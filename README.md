@@ -31,34 +31,34 @@ Locally served customized LLM that would be capable of analysing HTTP request / 
 
 ## Training
 
-*Note: Training data has been omited from the repository.*
+*Note: Final Training data has been omited from the repository.*
 
-### 1. Phase:
-LoRA fine-tuning for improved analysis reasoning on request / response pair. To be performed via pre-defined high-quality `x` examples of what kind of analysis/reasoning should be performed.
+Training data has been prepared by manually crafting pairs of insecure HTTP responses (misconfigured HTTP headers) and their clones with properly configures headers.
 
-Data to be prepared in the format:
+Data has been prepared in following format:
 ```json
-[{"input": "Analyze this HTTP request/response: GET /admin ...", 
- "output": "User provided request for admin interface without cookies with valid response, indicating that application can be accesses unauthenticated. Additionally, response was missing HSTS security header."},...]
+  {
+    "prompt": "### Instruction:\n \n Evaluate HTTP response headers in a single paragraph and...\n \n <request>RAW Request</request>\n<response>RAW Response</response>",
+    "reasoning": "The HTTP response for **myawesome.shop** lacks several key ... ",
+    "classification": 1,
+    "gpt5_classification": 0, // used for benchmarking
+    "gpt5_classification_prompt_engineering": 1, // used for benchmarking
+  },
 ```
 
-*Note: following data were collected on smaller model ollama-3.1-1B, with small subset of data. To be updated...*
+*Note: Section to be added on syntetic data generation using larger models and multiple agents*
+
+### 1. Phase:
+LoRA fine-tuning for improved analysis reasoning on request / response pair. This was performed via pre-defined high-quality `x` examples of what kind of analysis/reasoning should be performed and what should be considered during evaluation.
+
+*Note: following training stats were collected on smaller model ollama-3.1-1B, with small subset of training data. This will be updated later...*
 Evolution of loss function during fine-tuning of LoRA adapter for analysing HTTP headers in relation to the content of the page:
 ![FineTuning-Training-Loss](imgs/fine-tuning-training-loss.png)
 
 ### 2. Phase:
-*Still in design progress...*
+*Still in design process...*
 
 Full MLP (Multi-layered perceptron) training for data classification performed on the output of the last hidden state. (probably mean of all outputs)
-
-Data to be prepared in the format:
-```json
-[{"input": "Analyze this HTTP request/response: GET /admin ... + <analysis from previous phase>", 
- "label": 0}]
-```
-
-*Note: following data are from smaller model ollama-3.1-1B*
-
 
 ## Evaluation
 

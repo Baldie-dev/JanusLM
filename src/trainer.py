@@ -97,7 +97,7 @@ def StartReasoningTraining():
     training_args = TrainingArguments(
         output_dir="./lora-out",
         per_device_train_batch_size=1,
-        max_steps=10,
+        max_steps=30,
         learning_rate=2e-4,
         logging_steps=1,
         report_to=None,
@@ -125,9 +125,9 @@ def StartReasoningTraining():
     losses = [x["loss"] for x in log_history if "loss" in x]
     plt.figure(figsize=(7, 4))
     plt.plot(steps, losses, marker="o")
-    plt.xlabel("Epoch")
+    plt.xlabel("Steps")
     plt.ylabel("Training Loss")
-    plt.title("Loss vs Epoch")
+    plt.title("Training LoRA Adapter")
     plt.grid(True)
     plt.savefig("imgs/fine-tuning-training-loss.png")
     plt.show()
