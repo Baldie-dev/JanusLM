@@ -71,7 +71,7 @@ Definition of terms:
 
 #### Precision
 
-Calculation of how many marked findings were actually correct:
+Calculation of how many marked findings were actually correct (how many false-positives were generated):
 
 $$Precision = \frac{TP}{TP+FP}$$
 
@@ -82,9 +82,15 @@ Overall correctness:
 $$Accuracy = \frac{TP+TN}{TP+FP+TN+FN}$$
 
 ### Results
-To be done:
 
-1. Comparison of proposal 1 and proposal 2 vs baseline (LLM that is doing natively classification)
+`Baseline` is defined in two versions:
+1. LLM that is generating token that represents classification.
+2. LLM that is first generating analysis and then token representing final classification.
+
+#### Baseline vs Proposal 1 and Proposal 2
+Comparison of accuracy between different models:
+![model-accuracy-benchmark](imgs/ollama-3.1-1B-benchmark.png)
+
 2. Evaluation how big impact does fine-tuning has
 3. Evaluation of different models on accuracy.
 4. Evaluation of different size/shape of classification head on accuracy.

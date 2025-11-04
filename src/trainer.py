@@ -10,6 +10,7 @@ from transformers import get_linear_schedule_with_warmup
 from torch.optim import AdamW 
 from transformers import DataCollatorForLanguageModeling
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Disable cachining
 import datasets
@@ -23,6 +24,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def StartReasoningTraining():
+    ADAPTER_PATH = "./lora_adapter_direct_class"
+
     import torch
     from torch.optim import AdamW
     torch.set_num_threads(1)
@@ -34,18 +37,29 @@ def StartReasoningTraining():
     tokenizer.pad_token = tokenizer.eos_token
 
     def tokenize_fn(sample):
-        texts = [f"{p}\n{r}" for p, r in zip(sample["prompt"], sample["reasoning"])] \
-                if isinstance(sample["prompt"], list) \
-                else f"{sample['prompt']}\n{sample['reasoning']}"
-        tokenized = tokenizer(texts, truncation=True, padding="max_length", max_length=512)
+        prompt = sample["prompt"]
+        reasoning = sample["reasoning"]
+        full_text = prompt + reasoning
+        tokenized = tokenizer(
+            full_text,
+            truncation=True,
+            padding="max_length",
+            max_length=512,
+        )
+        prompt_ids = tokenizer(prompt, truncation=True, max_length=512).input_ids
+        prompt_len = len(prompt_ids)
+        labels = [-100] * prompt_len + tokenized["input_ids"][prompt_len:]
+        labels += [-100] * (512 - len(labels))
         return {
             "input_ids": tokenized["input_ids"],
             "attention_mask": tokenized["attention_mask"],
-            "labels": tokenized["input_ids"],
+            "labels": labels,
         }
 
+
     logger.info("Tokenizing dataset...")
-    tokenized = dataset.map(tokenize_fn, batched=True, remove_columns=dataset["train"].column_names, num_proc=None)
+    tokenized = dataset.map(
+        tokenize_fn, batched=False, remove_columns=dataset["train"].column_names, num_proc=None)
     train_dataset = tokenized["train"].select(range(min(10, len(tokenized["train"]))))
 
     logger.info("Loading base model...")
@@ -97,7 +111,7 @@ def StartReasoningTraining():
     training_args = TrainingArguments(
         output_dir="./lora-out",
         per_device_train_batch_size=1,
-        max_steps=30,
+        max_steps=50,
         learning_rate=2e-4,
         logging_steps=1,
         report_to=None,
@@ -118,26 +132,24 @@ def StartReasoningTraining():
     trainer.train()
     logger.info("Training completed!")
     log_history = trainer.state.log_history
-    model.save_pretrained("./lora_adapter")
+    model.save_pretrained(ADAPTER_PATH)
 
     # Save statistics from learning
     steps = [x["step"] for x in log_history if "loss" in x]
     losses = [x["loss"] for x in log_history if "loss" in x]
+    
+    # Fir the trend line
+    coeffs = np.polyfit(steps, losses, deg=1)
+    trend_line = np.poly1d(coeffs)
+    
     plt.figure(figsize=(7, 4))
     plt.plot(steps, losses, marker="o")
+    plt.plot(steps, trend_line(steps), color="red", linestyle="--", label="Trend Line")
     plt.xlabel("Steps")
     plt.ylabel("Training Loss")
     plt.title("Training LoRA Adapter")
     plt.grid(True)
-    plt.savefig("imgs/fine-tuning-training-loss.png")
+    #plt.savefig("imgs/fine-tuning-training-loss.png")
     plt.show()
-
-
-def LoadTrained():
-    #Loading
-    #from peft import PeftModel
-    #base = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
-    #model = PeftModel.from_pretrained(base, "./lora_adapter")
-    pass
 
 StartReasoningTraining()
