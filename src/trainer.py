@@ -1,19 +1,18 @@
 from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForCausalLM
 from dotenv import load_dotenv
-import os, torch
+import os, torch, logging, datasets, json
 from peft import LoraConfig, get_peft_model
 from datasets import load_dataset
 from JanusLModel import JanusSequenceClassification
-import logging
 from torch.utils.data import DataLoader
-from transformers import get_linear_schedule_with_warmup
 from torch.optim import AdamW 
+from transformers import get_linear_schedule_with_warmup
 from transformers import DataCollatorForLanguageModeling
 import matplotlib.pyplot as plt
 import numpy as np
+import scienceplots
 
 # Disable cachining
-import datasets
 datasets.disable_caching()
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -23,28 +22,42 @@ model_path = os.getenv("MODEL_PATH")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def StartReasoningTraining():
-    ADAPTER_PATH = "./lora_adapter_direct_class"
+def AnalyzeTrainingData():
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    token_lengths = []
+    with open("datasets/reasoning.jsonl", "r", encoding="utf-8") as f:
+        file_data = "".join(f.readlines())
+        items = json.loads(file_data)
+        for item in items:
+            full_text = item["prompt"] + item["reasoning"]
+            tokenized = tokenizer(full_text, truncation=False)
+            token_lengths.append(len(tokenized["input_ids"]))
+    plt.style.use('science')
+    plt.figure(figsize=(10, 6))
+    plt.hist(token_lengths, bins=10, color='skyblue', edgecolor='black')
+    plt.title("Token Count Distribution in Training Data")
+    plt.xlabel("Number of Tokens")
+    plt.ylabel("Frequency")
+    plt.grid(True)
+    plt.savefig("imgs/training-data-tokens-distribution.png")
 
-    import torch
-    from torch.optim import AdamW
+def StartTraining():
+    ADAPTER_PATH = "./lora_adapter_direct_class"
     torch.set_num_threads(1)
     os.environ["OMP_NUM_THREADS"] = "1"
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     dataset = load_dataset("json", data_files="datasets/reasoning.jsonl")
     tokenizer.pad_token = tokenizer.eos_token
 
     def tokenize_fn(sample):
         prompt = sample["prompt"]
-        reasoning = sample["reasoning"]
-        full_text = prompt + reasoning
+        full_text = prompt + sample["reasoning"] + "\n\n### Response:" + str(sample["classification"])
         tokenized = tokenizer(
             full_text,
             truncation=True,
             padding="max_length",
-            max_length=512,
+            max_length=2048,
         )
         prompt_ids = tokenizer(prompt, truncation=True, max_length=512).input_ids
         prompt_len = len(prompt_ids)
@@ -55,8 +68,6 @@ def StartReasoningTraining():
             "attention_mask": tokenized["attention_mask"],
             "labels": labels,
         }
-
-
     logger.info("Tokenizing dataset...")
     tokenized = dataset.map(
         tokenize_fn, batched=False, remove_columns=dataset["train"].column_names, num_proc=None)
@@ -141,7 +152,8 @@ def StartReasoningTraining():
     # Fir the trend line
     coeffs = np.polyfit(steps, losses, deg=1)
     trend_line = np.poly1d(coeffs)
-    
+
+    plt.style.use('science')
     plt.figure(figsize=(7, 4))
     plt.plot(steps, losses, marker="o")
     plt.plot(steps, trend_line(steps), color="red", linestyle="--", label="Trend Line")
@@ -152,4 +164,5 @@ def StartReasoningTraining():
     #plt.savefig("imgs/fine-tuning-training-loss.png")
     plt.show()
 
-StartReasoningTraining()
+AnalyzeTrainingData()
+StartTraining()

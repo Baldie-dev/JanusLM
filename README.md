@@ -1,17 +1,17 @@
 # JanusLM
-Reasoning Classification Dual-Head Transformer with LoRA-Based Fine-Tuning for Web Security assesments.
+Reasoning Classification Dual-Head Transformer with LoRA-Based Fine-Tuning for a Web Security evaluations.
 
 ## Description
 
-This project proposes and evalutes a Dual-Head Large Language Model (LLM) Architecture with Parameter-Efficient Fine-Tuning (LoRA - Low-Rank Adaptation) designed for joint generative reasoning and cyber-security classification tasks.
+This project proposes and evalutes a Dual-Head Large Language Model (LLM) Architecture with Parameter-Efficient Fine-Tuning (LoRA - Low-Rank Adaptation) designed for joint generative reasoning and cyber-security related classification tasks.
 
-By using LoRA (Low-Rank Adaptation), the model can efficiently adapt to perform security analysis tasks without changing the original base weights, keeping the reasoning power of the pretrained LLM minimally impacted while adding security domain specific intelligence.
+By using multiple tailored LoRA (Low-Rank Adaptation) adapters, the model can efficiently adapt to perform security analysis tasks without changing the original base weights, keeping the reasoning power of the pretrained LLM minimally impacted while adding security domain specific intelligence.
 
 Dual-head design provides a multi-purpose inference, where the pre-trained and fine-tuned generative head creates detailed analysis and the manually trained classification head delivers prediction.
 
 ## Goal
 
-Locally served customized LLM that would be capable of analysing HTTP request / response pair and clasify it from the cyber-security perspective.
+Primary goal is exploration in generation of syntetic high-quality training data and evaluation of different approaches to training, fine-tuning, base model selection and classification.
 
 ## Architecture
 
@@ -47,6 +47,10 @@ Data has been prepared in following format:
 ```
 
 *Note: Section to be added on syntetic data generation using larger models and multiple agents*
+
+Current token distribution in training data:
+
+![Token-Data-Distribution](imgs/training-data-tokens-distribution.png)
 
 ### 1. Phase:
 LoRA fine-tuning for improved analysis reasoning on request / response pair. This was performed via pre-defined high-quality `x` examples of what kind of analysis/reasoning should be performed and what should be considered during evaluation.
