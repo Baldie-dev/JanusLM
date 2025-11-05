@@ -1,6 +1,6 @@
 from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForCausalLM
 from dotenv import load_dotenv
-import os, torch, logging, datasets, json
+import os, torch, logging, datasets, json, argparse
 from peft import LoraConfig, get_peft_model
 from datasets import load_dataset
 from JanusLModel import JanusSequenceClassification
@@ -12,14 +12,23 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scienceplots
 
-# Disable cachining
-datasets.disable_caching()
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
+parser = argparse.ArgumentParser()
+parser.add_argument("--cpu", action="store_true", required=False, help="Safe and slow training on CPU, for compatibility reasons")
+parser.add_argument("--output", default="lora-adapter", required=False, help="output folder for trained model")
+parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during training")
+args = parser.parse_args()
+
+if args.cpu:
+    # Disable cachining
+    datasets.disable_caching()
+    os.environ["OMP_NUM_THREADS"] = "1"
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 load_dotenv()
 model_path = os.getenv("MODEL_PATH")
-logging.basicConfig(level=logging.INFO)
+
+if args.verbose:
+    logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def AnalyzeTrainingData():
@@ -42,10 +51,8 @@ def AnalyzeTrainingData():
     plt.savefig("imgs/training-data-tokens-distribution.png")
 
 def StartTraining():
-    ADAPTER_PATH = "./lora_adapter_direct_class"
-    torch.set_num_threads(1)
-    os.environ["OMP_NUM_THREADS"] = "1"
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    if args.cpu:
+        torch.set_num_threads(1)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     dataset = load_dataset("json", data_files="datasets/reasoning.jsonl")
     tokenizer.pad_token = tokenizer.eos_token
@@ -69,28 +76,43 @@ def StartTraining():
             "labels": labels,
         }
     logger.info("Tokenizing dataset...")
-    tokenized = dataset.map(
-        tokenize_fn, batched=False, remove_columns=dataset["train"].column_names, num_proc=None)
+    if args.cpu:
+        tokenized = dataset.map(
+            tokenize_fn, 
+            batched=False, 
+            remove_columns=dataset["train"].column_names, 
+            num_proc=None)
+    else:
+        tokenized = dataset.map(
+            tokenize_fn, 
+            remove_columns=dataset["train"].column_names)
     train_dataset = tokenized["train"].select(range(min(10, len(tokenized["train"]))))
 
     logger.info("Loading base model...")
     base_model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float32, device_map=None)
-    base_model.to("cpu")
+    if args.cpu:
+        base_model.to("cpu")
 
     # BugFix: disabling cache
-    if hasattr(base_model.config, "use_cache"):
-        base_model.config.use_cache = False
+    if args.cpu:
+        if hasattr(base_model.config, "use_cache"):
+            base_model.config.use_cache = False
 
     lora_config = LoraConfig(
-        r=8, lora_alpha=32, target_modules=["q_proj", "v_proj"],
-        lora_dropout=0.05, bias="none", task_type="CAUSAL_LM"
+        r=8, 
+        lora_alpha=32, 
+        target_modules=["q_proj", "v_proj"],
+        lora_dropout=0.05, 
+        bias="none", 
+        task_type="CAUSAL_LM"
     )
     logger.info("Setting up LoRA...")
     model = get_peft_model(base_model, lora_config)
-    model.to("cpu")
-    # BugFix: checking if model also has caching disabled
-    if hasattr(model.config, "use_cache"):
-        model.config.use_cache = False
+    if args.cpu:
+        model.to("cpu")
+        # BugFix: checking if model also has caching disabled
+        if hasattr(model.config, "use_cache"):
+            model.config.use_cache = False
 
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False, pad_to_multiple_of=None)
 
@@ -99,8 +121,11 @@ def StartTraining():
     example = train_dataset[0]
     batch = data_collator([example])
     # convert to tensors
-    batch_t = {k: (v.detach().clone().to("cpu") if isinstance(v, torch.Tensor) else torch.tensor(v, device="cpu")) for k, v in batch.items()}
-
+    if args.cpu:
+        batch_t = {k: (v.detach().clone().to("cpu") if isinstance(v, torch.Tensor) else torch.tensor(v, device="cpu")) for k, v in batch.items()}
+    else:
+        # To check if this works on GPU
+        batch_t = {k: (v.detach().clone() if isinstance(v, torch.Tensor) else torch.tensor(v)) for k, v in batch.items()}
     model.train()
     optimizer = AdamW(model.parameters(), lr=2e-4)
 
@@ -118,20 +143,33 @@ def StartTraining():
         logger.exception("Manual forward/backward failed — this indicates model/PEFT issue: %s", e)
         raise
 
-    # Prepare training parameters
-    training_args = TrainingArguments(
-        output_dir="./lora-out",
-        per_device_train_batch_size=1,
-        max_steps=50,
-        learning_rate=2e-4,
-        logging_steps=1,
-        report_to=None,
-        remove_unused_columns=False,
-        dataloader_num_workers=0,
-        use_cpu=True,
-        save_strategy="no",
-        logging_strategy="steps",
-    )
+    # Prepare training parameter
+    max_trainning_steps = 50
+    if args.cpu:
+        training_args = TrainingArguments(
+            output_dir="./lora-out",
+            per_device_train_batch_size=1,
+            max_steps=max_trainning_steps,
+            learning_rate=2e-4,
+            logging_steps=1,
+            report_to=None,
+            remove_unused_columns=False,
+            dataloader_num_workers=0,
+            use_cpu=True,
+            save_strategy="no",
+            logging_strategy="steps",
+        )
+    else:
+        training_args = TrainingArguments(
+            output_dir="./lora-out",
+            max_steps=max_trainning_steps,
+            learning_rate=2e-4,
+            logging_steps=1,
+            report_to=None,
+            remove_unused_columns=False,
+            save_strategy="no",
+            logging_strategy="steps",
+        )
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -143,7 +181,7 @@ def StartTraining():
     trainer.train()
     logger.info("Training completed!")
     log_history = trainer.state.log_history
-    model.save_pretrained(ADAPTER_PATH)
+    model.save_pretrained(args.output)
 
     # Save statistics from learning
     steps = [x["step"] for x in log_history if "loss" in x]

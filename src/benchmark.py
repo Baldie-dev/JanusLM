@@ -12,6 +12,7 @@ model_path = os.getenv("MODEL_PATH")
 ADAPTER_DIRECT_CLASS_PATH = "./lora_adapter_direct_class"
 mpl.rcParams['text.usetex'] = False
 plt.rc('text', usetex=False)
+model = 'ollama-3.1-1B'
 
 # Load benchmark data
 eval_data = []
@@ -130,10 +131,9 @@ Answer with only single digit 1 or 0 when:
     print(f"Model Accuracy: {accuracy:.2%} ({correct}/{total})")
     return accuracy
 
-#default_self = run_benchmark_default_self_classification()
-#finetuned_self = run_benchmark_finetuned_self_classification()
+default_self = run_benchmark_default_self_classification(20)
+finetuned_self = run_benchmark_finetuned_self_classification(20)
 
-model = 'ollama-3.1-1B'
 categories = [model+"-SC",model+"-FT-SC",model+"-FT-CH","GPT4","GPT4-Prompt-Engineering"]
 gpt4 = gpt4pe = total = 0
 with open("datasets/reasoning.jsonl", "r", encoding="utf-8") as f:
@@ -148,6 +148,7 @@ with open("datasets/reasoning.jsonl", "r", encoding="utf-8") as f:
 results = [default_self, finetuned_self, 0, gpt4/total, gpt4pe/total]
 
 # Plotting
+plt.rcParams.update({'font.size': 14})
 plt.style.use('science')
 plt.figure(figsize=(10, 6))
 colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'] 

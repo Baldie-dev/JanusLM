@@ -1,17 +1,17 @@
 # JanusLM
-Reasoning Classification Dual-Head Transformer with LoRA-Based Fine-Tuning for a Web Security evaluations.
+Reasoning Classification Dual-Head Transformer with LoRA-Based Fine-Tuning for a Web Security false-positive evaluations.
 
 ## Description
 
-This project proposes and evalutes a Dual-Head Large Language Model (LLM) Architecture with Parameter-Efficient Fine-Tuning (LoRA - Low-Rank Adaptation) designed for joint generative reasoning and cyber-security related classification tasks.
+This project proposes and evaluates a Dual-Head Large Language Model (LLM) architecture utilizing Parameter-Efficient Fine-Tuning (Low-Rank Adaptation), specifically designed for joint generative reasoning and cybersecurity-related classification tasks
 
-By using multiple tailored LoRA (Low-Rank Adaptation) adapters, the model can efficiently adapt to perform security analysis tasks without changing the original base weights, keeping the reasoning power of the pretrained LLM minimally impacted while adding security domain specific intelligence.
+By leveraging multiple tailored LoRA adapters, the model can efficiently adapt to perform security analysis tasks without changing the original base weights, keeping the reasoning power of the pretrained LLM minimally impacted while adding security domain specific intelligence.
 
-Dual-head design provides a multi-purpose inference, where the pre-trained and fine-tuned generative head creates detailed analysis and the manually trained classification head delivers prediction.
+Dual-head design provides a multi-purpose inference, where the pre-trained and fine-tuned generative head creates detailed analysis and the trained classification head consisting of dense neural network delivers prediction.
 
 ## Goal
 
-Primary goal is exploration in generation of syntetic high-quality training data and evaluation of different approaches to training, fine-tuning, base model selection and classification.
+The primary goal is to explore the possibility of using a small, locally hosted, tailored model that delivers performance comparable to the largest commercial models. The second goal focuses on generating synthetic, high-quality training data and evaluating various approaches to training, fine-tuning, base model selection, and classification methods
 
 ## Architecture
 
@@ -23,17 +23,17 @@ Primary goal is exploration in generation of syntetic high-quality training data
 
 ## Key Features
 
-- This framework can be applied on any model.
-- PEFT (LoRA) for analysis process on request / response pairs.
-- Posibility to swap LoRA matrices for different analysis types.
-- Fully trained Classification head (Multi-Layer Perceptron) for classification tasks.
-- Designed to be locally hosted on user device.
+- Compatible with any open-source model.
+- PEFT (LoRA) fine-tuned for analysis creation of request/response pairs.
+- Supports swapping LoRA matrices to target different analysis types.
+- Includes a fully trained classification head (Multi-Layer Perceptron) for false-positive evaluation.
+- Optimized for local deployment on the user's device.
 
 ## Training
 
-*Note: Final Training data has been omited from the repository.*
+*Note: Training data has been omited from the repository.*
 
-Training data has been prepared by manually crafting pairs of insecure HTTP responses (misconfigured HTTP headers) and their clones with properly configures headers.
+The training data was manually prepared by crafting pairs of insecure HTTP responses featuring misconfigured headers and their counterparts with properly configured headers. This should help model understand the main differences between false and true positive.
 
 Data has been prepared in following format:
 ```json
@@ -41,22 +41,25 @@ Data has been prepared in following format:
     "prompt": "### Instruction:\n \n Evaluate HTTP response headers in a single paragraph and...\n \n <request>RAW Request</request>\n<response>RAW Response</response>",
     "reasoning": "The HTTP response for **myawesome.shop** lacks several key ... ",
     "classification": 1,
-    "gpt5_classification": 0, // used for benchmarking
-    "gpt5_classification_prompt_engineering": 1, // used for benchmarking
+    "gpt4_classification": 0, // used for benchmarking
+    "gpt4_classification_prompt_engineering": 1, // used for benchmarking
   },
 ```
 
+### Synthetic data generation
+
 *Note: Section to be added on syntetic data generation using larger models and multiple agents*
 
-Current token distribution in training data:
+Current token distribution in training data (*Larger dataset to be prepared*):
 
 ![Token-Data-Distribution](imgs/training-data-tokens-distribution.png)
 
 ### 1. Phase:
-LoRA fine-tuning for improved analysis reasoning on request / response pair. This was performed via pre-defined high-quality `x` examples of what kind of analysis/reasoning should be performed and what should be considered during evaluation.
+LoRA fine-tuning was applied to enhance analytical reasoning over request/response pairs. This was achieved using predefined, high-quality `x` examples that illustrated the desired type of analysis and the evaluation criteria to be considered.
 
 *Note: following training stats were collected on smaller model ollama-3.1-1B, with small subset of training data. This will be updated later...*
-Evolution of loss function during fine-tuning of LoRA adapter for analysing HTTP headers in relation to the content of the page:
+
+Evolution of the loss function during fine-tuning of a LoRA adapter for creation of analysis for HTTP responses, showing that model is improving ability to perform reasoning.
 ![FineTuning-Training-Loss](imgs/fine-tuning-training-loss.png)
 
 ### 2. Phase:
@@ -70,7 +73,7 @@ Full MLP (Multi-layered perceptron) training for data classification performed o
 Definition of terms:
 - $TP$ - True Positive, correctly marked finding.
 - $FP$ - False Positive, incorrectly marked finding.
-- $TN$ - True Negative, correctly marked input as safe.
+- $TN$ - True Negative, correctly marked HTTP response as secure.
 - $FN$ - False Negative, missed finding.
 
 #### Precision
@@ -87,19 +90,21 @@ $$Accuracy = \frac{TP+TN}{TP+FP+TN+FN}$$
 
 ### Results
 
-`Baseline` is defined in two versions:
-1. LLM that is generating token that represents classification.
-2. LLM that is first generating analysis and then token representing final classification.
+Explanation of model types:
+- `<base_model>-SC`: Base model that performs false-positive analysis by generating token (1 or 0).
+- `<base_model>-PE-SC`: Base model with prompt engineering that performs false-positive analysis by generating token (1 or 0).
+- `<base_model>-FT-SC`: Fine-Tuned model that performs false-positive analysis by generating token (1 or 0).
+- `<base_model>-FT-PE-SC`: Fine-Tuned model with prompt engineering that performs false-positive analysis by generating token (1 or 0).
+- `<base_model>-FT-CH`: Fine-Tuned model that performs false-positive analysis by leveraging classification head.
+- `<base_model>-FT-PE-CH`: Fine-Tuned model with prompt engineering that performs false-positive analysis by leveraging classification head.
 
 #### Baseline vs Proposal 1 and Proposal 2
 Comparison of accuracy between different models:
 ![model-accuracy-benchmark](imgs/ollama-3.1-1B-benchmark.png)
 
-2. Evaluation how big impact does fine-tuning has
-3. Evaluation of different models on accuracy.
-4. Evaluation of different size/shape of classification head on accuracy.
-5. Evaluation of reasoning length on accuracy.
-6. Evaluation of fine-tuning approaches / effect of sample size on accuracy.
+1. Evaluation of different size/shape of classification head on accuracy.
+2. Evaluation of reasoning length on accuracy.
+3. Evaluation of fine-tuning approaches / effect of sample size on accuracy.
 
 ## Pre-Requisities
 
@@ -116,6 +121,10 @@ Comparison of accuracy between different models:
 ```python
 MODEL_PATH="<path_to_llama-3.2-model>"
 ```
+
+2. Update `datasets/reasoning.jsonl` with training data for fine-tuning.
+
+3. 
 
 ## Execution
 
