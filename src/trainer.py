@@ -13,9 +13,11 @@ import numpy as np
 import scienceplots
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--mode", choices=['lora','class'], required=True, help="Triggers training either for LoRA or Classification head")
 parser.add_argument("--cpu", action="store_true", required=False, help="Safe and slow training on CPU, for compatibility reasons")
 parser.add_argument("--output", default="lora-adapter", required=False, help="output folder for trained model")
 parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during training")
+parser.add_argument("--charts", action="store_true", required=False, help="If sets, training charts are generated.")
 args = parser.parse_args()
 
 if args.cpu:

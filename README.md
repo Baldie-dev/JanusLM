@@ -108,27 +108,50 @@ Comparison of accuracy between different models:
 
 ## Pre-Requisities
 
-- llama-cpp-python:
-    pre-built wheel with basic CPU support:
+- llama-cpp-python
+- for CPU support: pre-built wheel with basic CPU support
+- install all requirements:
     ```bash
     pip install -r requirements
     ```
-- default model `llama-2-13b`
+- download open source base model, for example `llama-2-7b`
 
 ## Getting Started
 
 1. Create `.env` file with following:
 ```python
-MODEL_PATH="<path_to_llama-3.2-model>"
+MODEL_PATH="<path_to_base_model>"
 ```
 
 2. Update `datasets/reasoning.jsonl` with training data for fine-tuning.
 
-3. 
+3. Start LoRA training first via command:
+```console
+usage: trainer.py [-h] --mode {lora,class} [--cpu] [--output OUTPUT] [--verbose] [--charts]
+
+options:
+  -h, --help           show this help message and exit
+  --mode {lora,class}  Triggers training either for LoRA or Classification head
+  --cpu                Safe and slow training on CPU, for compatibility reasons
+  --output OUTPUT      output folder for trained model
+  --verbose            Verbose output during training
+  --charts             If sets, training charts are generated.
+```
+for example:
+```console
+python src/trainer.py --mode lora --cpu --output lora-adapter --charts
+```
+
+4. Start Classification head training with previously trained LoRA adapters:
+
+```console
+python src/trainer.py --mode class --cpu --output class-model --input lora-adapter --charts
+```
 
 ## Execution
 
+To execute benchmarks:
 ```bash
-...to be done...
+python src/benchmark.py
 ```
 
