@@ -46,9 +46,24 @@ Data has been prepared in following format:
   },
 ```
 
-### Synthetic data generation
+### Synthetic Data Generation
 
-*Note: Section to be added on syntetic data generation using larger models and multiple agents*
+*Note: This section is still in design phase...*
+
+Templates of realistic HTTP request/response pairs were combined with larger models to generate synthetic training data:
+
+![synthentic-data-generation](imgs/synthetic-data-generation.png)
+
+For training data generation, please see `src/data_generator.py`:
+```console
+usage: data_generator.py [-h] [--num NUM] --templates TEMPLATES --vuln {HTTP_HEADERS,XSS}
+
+options:
+  -h, --help            show this help message and exit
+  --num NUM             number of generated request/response pairs
+  --templates PATH      templates for request/response pairs.
+  --vuln {HTTP_HEADERS,XSS} Select category of vulnerability
+```
 
 Current token distribution in training data (*Larger dataset to be prepared*):
 
@@ -121,6 +136,8 @@ Comparison of accuracy between different models:
 1. Create `.env` file with following:
 ```python
 MODEL_PATH="<path_to_base_model>"
+LLM_API_URL=http://127.0.0.1:8000/v1
+LLM_API_KEY=dummy_key
 ```
 
 2. Update `datasets/reasoning.jsonl` with training data for fine-tuning.

@@ -1,0 +1,7 @@
+You are a machine learning engineer and your goal is to produce high quality training data.
+You will recieve a template of valid HTTP request and your goal is to slightly adjust it by replacing some user supplied parameters such as URL, agent, name and values of parameters, referrer header.
+Output only new HTTP request and nothing else.
+
+<template>
+{template}
+</template>

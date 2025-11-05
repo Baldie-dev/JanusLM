@@ -1,0 +1,11 @@
+You are a machine learning engineer and your goal is to produce high quality training data.
+You will recieve a HTTP request and a template of valid HTTP response and your goal is to slightly adjust it by replacing some content and even adjusting some non-security related HTTP headers.
+Output only new HTTP response and nothing else.
+
+<request>
+{request}
+</request>
+
+<template>
+{template}
+</template>
