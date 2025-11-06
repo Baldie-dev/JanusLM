@@ -33,24 +33,23 @@ The primary goal is to explore the possibility of using a small, locally hosted,
 
 *Note: Training data has been omited from the repository.*
 
-The training data was manually prepared by crafting pairs of insecure HTTP responses featuring misconfigured headers and their counterparts with properly configured headers. This should help model understand the main differences between false and true positive.
+The training data was manually prepared by crafting pairs of insecure HTTP responses and their counterparts with that does not indicate any vulnerability. This approach should help model to understand the main differences between false and true positive.
 
-Data has been prepared in following format:
-```json
-  {
-    "prompt": "### Instruction:\n \n Evaluate HTTP response headers in a single paragraph and...\n \n <request>RAW Request</request>\n<response>RAW Response</response>",
-    "reasoning": "The HTTP response for **myawesome.shop** lacks several key ... ",
-    "classification": 1,
-    "gpt4_classification": 0, // used for benchmarking
-    "gpt4_classification_prompt_engineering": 1, // used for benchmarking
-  },
+Data has been prepared in SQLite databse in format:
+```sql
+CREATE TABLE IF NOT EXISTS training_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    request TEXT NOT NULL,
+    response TEXT NOT NULL,
+    analysis TEXT NOT NULL,
+    is_vulnerable BOOL NOT NULL,
+    vuln_category INTEGER NOT NULL
+)
 ```
 
 ### Synthetic Data Generation
 
-*Note: This section is still in design phase...*
-
-High-quality of manually crafted templates of realistic HTTP request/response pairs were passed through multiple agents that used larger models to generate synthetic training data. Each agent performed small mutations to the templates to expand 
+High-quality of manually crafted templates of realistic HTTP request/response pairs were passed through multiple agents that used larger models to generate synthetic training data. Each agent performed small mutations to the templates to expand overall dataset for training (from 20 templates to 1000 samples).
 
 ![synthentic-data-generation](imgs/synthetic-data-generation.png)
 
@@ -58,13 +57,26 @@ Manual review was required to fine-tune the prompts for each agent.
 
 For training data generation, please see `src/data_generator.py`:
 ```console
-usage: data_generator.py [-h] [--num NUM] --templates TEMPLATES --vuln {HTTP_HEADERS,XSS}
+usage: data_generator.py [-h] [--num NUM]
+                         [--templates TEMPLATES] --vuln
+                         {HTTP_HEADERS,XSS} [--verbose]
+                         [--instruction INSTRUCTION] [--nofp]
+                         [--analyze]
 
 options:
   -h, --help            show this help message and exit
-  --num NUM             number of generated request/response pairs
-  --templates PATH      templates for request/response pairs.
-  --vuln {HTTP_HEADERS,XSS} Select category of vulnerability
+  --num NUM             number of generated request/response
+                        pairs
+  --templates TEMPLATES
+                        templates for request/response pairs.
+  --vuln {HTTP_HEADERS,XSS}
+                        Select category of vulnerability
+  --verbose             Activates detailed log output
+  --instruction INSTRUCTION
+                        Special instruction for the agent that
+                        is introducing vuln.
+  --nofp                Only store vulnerable req/res pair.
+  --analyze             Only analyze stored training data
 ```
 
 for example:
@@ -72,9 +84,11 @@ for example:
 python src\data_generator.py --verbose --vuln HTTP_HEADERS --num 5 --instruction "Do not introduce CORS misconfiguration, but introduce HSTS misconfiguration"
 ```
 
-To generate one pair of high-quality training data, it costs on average:
+To generate one pair of high-quality training data, following number of tokens has been consumed:
 - Input tokens: ~4000
 - Output tokens: ~10000
+
+Which means that it costs around 14M tokens to generate 1000 of training data samples.
 
 Current token distribution in training data (*Larger dataset to be prepared*):
 
@@ -95,7 +109,7 @@ Full MLP (Multi-layered perceptron) training for data classification performed o
 
 ## Evaluation
 
-Evaluation was performed using a cross-validation technique by splitting the training data into two folds, where one was used for training and the other for validation.
+Evaluation was performed using a cross-validation technique (80/20) by splitting the training data into two folds, where one was used for training and the other for validation.
 
 ### Metrics
 Definition of terms:
