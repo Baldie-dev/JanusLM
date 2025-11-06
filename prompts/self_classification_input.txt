@@ -33,9 +33,3 @@ this is my analysis and header is secure.
 <response>
 {response}
 </response>
-<<<<>>>>
-### Analysis
-
-{reasoning}
-
-### Result: {result}

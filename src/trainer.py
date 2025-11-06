@@ -47,20 +47,14 @@ def StartTraining():
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     dataset = load_data()
     tokenizer.pad_token = tokenizer.eos_token
-    with open("prompts/training_reasoning_self_classification.txt", "r", encoding="utf-8") as f: prompt_tmp = f.read()
+    with open("prompts/self_classification_input.txt", "r", encoding="utf-8") as f: prompt_input_tmp = f.read()
+    with open("prompts/self_classification_output.txt", "r", encoding="utf-8") as f: prompt_output_tmp = f.read()
 
     def tokenize_fn(sample):
-        full_text = (
-            prompt_tmp
-            .replace("{request}", sample["request"])
-            .replace("{response}", sample["response"])
-            .replace("{reasoning}", sample["analysis"])
-            .replace("{result}", "1" if sample["is_vulnerable"] else "0")
-        )
+        input_text = prompt_input_tmp.replace("{request}", sample["request"]).replace("{response}", sample["response"]).strip()
+        output_text = prompt_output_tmp.replace("{reasoning}", sample["analysis"]).replace("{result}", "1" if sample["is_vulnerable"] else "0").strip()
+        full_text = input_text + output_text
 
-        input_text = full_text.split("<<<<>>>>")[0].strip()
-        output_text = full_text.split("<<<<>>>>")[1].strip()
-        full_text = full_text.replace("<<<<>>>>","")
         input_tokens = tokenizer(input_text, truncation=True, max_length=1024, add_special_tokens=False)
         output_tokens = tokenizer(output_text, truncation=True, max_length=1024, add_special_tokens=False)
         input_ids = input_tokens["input_ids"] + output_tokens["input_ids"]

@@ -1,0 +1,5 @@
+### Analysis
+
+{reasoning}
+
+### Result: {result}
