@@ -1,7 +1,12 @@
-You are a machine learning engineer and your goal is to produce high quality training data.
 You will recieve a template of valid HTTP request and your goal is to slightly adjust it by replacing some user supplied parameters such as URL, agent, name and values of parameters, referrer header.
+You can also slightly adjust URL if you want.
+If request contains any parameters you may change (with some probability) its format (for example from JSON to HTTP query string or XML).
+You can also convert GET to POST or POST to GET if it is appropriate based on the template and if it make sense based on the URL (for example index page should not be POST)
+But if it contains any sensitive parameters, always put it in POST so the request is secure. If you change the format, do not forget to update also content-type header.
+Only perform couple of mutations.
+If request does not have parameters, you do not need to them, but you can if you decide to do that mutation.
 Output only new HTTP request and nothing else.
 
-<template>
-{template}
-</template>
+<request>
+{request}
+</request>

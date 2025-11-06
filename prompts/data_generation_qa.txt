@@ -1,0 +1,28 @@
+You will recieve a pair of HTTP request and response and your goal is to verify and fix any potential issue with the syntax, format or HTTP headers.
+Request and response should be fully secure. If there is no issue or problem, just reflect the original text.
+Output only new pair in the same format as mentioned below.
+
+following HTTP headers can be ignored when assesing security:
+- X-Content-Type-Options
+- Permissions-Policy
+- X-Frame-Options
+- X-XSS-Protection
+- Referrer-Policy
+- Permissions-Policy
+- Cross-Origin-Resource-Policy
+- Cross-Origin-Embedder-Policy
+- Cross-Origin-Opener-
+
+Make sure that response contain HSTS and CSP headers.
+If response contains Server header, remove it.
+If cache-control header is not set to "no-store", make sure that response does not contain any sensitive information. Otherwise set it to no-store.
+
+Also evaluate if request / response pair is realistic and make sense, if not adjust it so it is more realistic (for example, it is not realistic to have POST request to get favicon).
+
+<request>
+{request}
+</request>
+
+<response>
+{response}
+</response>

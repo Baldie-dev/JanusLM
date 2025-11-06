@@ -1,11 +1,12 @@
-You are a machine learning engineer and your goal is to produce high quality training data.
 You will recieve a HTTP request and a template of valid HTTP response and your goal is to slightly adjust it by replacing some content and even adjusting some non-security related HTTP headers.
+Perform only small number of modification (mutations).
+Keep the original intent of the response (for example: keep redirection as redirection, image fetching as image fetching)
 Output only new HTTP response and nothing else.
 
 <request>
 {request}
 </request>
 
-<template>
-{template}
-</template>
+<response>
+{response}
+</response>

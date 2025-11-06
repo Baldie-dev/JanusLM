@@ -1,0 +1,26 @@
+You will recieve a pair of HTTP request and response and your goal is to tamper with request (if applicable) and response to introduce mentioned vulnerability.
+Output only new pair in the same format as mentioned below.
+Introduce only 1 or 2 misconfigurations, do not change everything.
+
+if vulnerability is miconfigured HTTP headers, do not change request.
+if you tamper with cache-control header, make sure that response contains sensitive private information.
+following headers can be ignored:
+- X-Content-Type-Options
+- Permissions-Policy
+- X-Frame-Options
+- X-XSS-Protection
+- Referrer-Policy
+- Permissions-Policy
+- Cross-Origin-Resource-Policy
+- Cross-Origin-Embedder-Policy
+- Cross-Origin-Opener-Policy
+
+vulnerability: {vulnerability}
+
+<request>
+{request}
+</request>
+
+<response>
+{response}
+</response>

@@ -50,9 +50,11 @@ Data has been prepared in following format:
 
 *Note: This section is still in design phase...*
 
-Templates of realistic HTTP request/response pairs were combined with larger models to generate synthetic training data:
+Templates of realistic HTTP request/response pairs were combined with agents using larger models to generate synthetic training data:
 
 ![synthentic-data-generation](imgs/synthetic-data-generation.png)
+
+Manual review was required to fine-tune the prompts for each agent.
 
 For training data generation, please see `src/data_generator.py`:
 ```console
@@ -64,6 +66,10 @@ options:
   --templates PATH      templates for request/response pairs.
   --vuln {HTTP_HEADERS,XSS} Select category of vulnerability
 ```
+
+To generate one pair of high-quality training data, it costs on average:
+- Input tokens: ~3500
+- Output tokens: ~1700
 
 Current token distribution in training data (*Larger dataset to be prepared*):
 
@@ -83,6 +89,8 @@ Evolution of the loss function during fine-tuning of a LoRA adapter for creation
 Full MLP (Multi-layered perceptron) training for data classification performed on the output of the last hidden state. (probably mean of all outputs)
 
 ## Evaluation
+
+Evaluation was performed using a cross-validation technique by splitting the training data into two folds, where one was used for training and the other for validation.
 
 ### Metrics
 Definition of terms:
@@ -172,3 +180,6 @@ To execute benchmarks:
 python src/benchmark.py
 ```
 
+## Notes to self
+
+- Can I fine-tune / train it purely on what I consider secure/insecure (true/false input) and let it figure it out what does it make secure/insecure?
