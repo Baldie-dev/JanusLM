@@ -1,6 +1,7 @@
 import argparse, sqlite3, random, os, logging
 from dotenv import load_dotenv
 from openai import OpenAI
+import matplotlib.pyplot as plt
 
 conn = sqlite3.connect('datasets/data.db')
 cursor = conn.cursor()
@@ -42,6 +43,27 @@ def init():
         except:
             pass
     conn.commit()
+
+def AnalyzeTrainingData():
+    import scienceplots
+    from transformers import AutoTokenizer
+    tokenizer = AutoTokenizer.from_pretrained(os.getenv("MODEL_PATH"))
+    token_lengths = []
+    cursor.execute('SELECT * FROM training_data')
+    rows = cursor.fetchall()
+    for item in rows:
+        full_text = item[1] + item[2] + item[3]
+        tokenized = tokenizer(full_text, truncation=False)
+        token_lengths.append(len(tokenized["input_ids"]))
+    plt.rcParams.update({'font.size': 14})
+    plt.style.use('science')
+    plt.figure(figsize=(10, 6))
+    plt.hist(token_lengths, bins=10, color='skyblue', edgecolor='black')
+    plt.title("Token Count Distribution in Training Data")
+    plt.xlabel("Number of Tokens")
+    plt.ylabel("Frequency")
+    plt.grid(True)
+    plt.savefig("imgs/training-data-tokens-distribution.png")
 
 def store_data(request, response, is_vulnerable, reasoning):
     vuln_id = None
@@ -114,6 +136,7 @@ def generate_data():
         response = vuln_pair.split("<response>")[1].split("</response")[0]
         # Create a vulnerable clone
         prompt_res_vuln = prompt_tmp_vuln.replace("{request}", request).replace("{response}", response).replace("{vulnerability}", vulnerability)
+        prompt_res_vuln = prompt_res_vuln.replace("{instruction}", args.instruction)
         vuln_pair = submit_prompt(prompt_res_vuln)
         vuln_request = vuln_pair.split("<request>")[1].split("</request")[0]
         vuln_response = vuln_pair.split("<response>")[1].split("</response")[0]
@@ -121,7 +144,8 @@ def generate_data():
         reasoning = submit_prompt(prompt_tmp_reasoning.replace("{request}", request).replace("{response}", response))
         reasoning_vuln = submit_prompt(prompt_tmp_reasoning.replace("{request}", vuln_request).replace("{response}", vuln_response))
         # Store data in DB
-        store_data(request.strip(), response.strip(), False, reasoning.strip())
+        if not args.nofp:
+            store_data(request.strip(), response.strip(), False, reasoning.strip())
         store_data(vuln_request.strip(), vuln_response.strip(), True, reasoning_vuln.strip())
 
 init()
@@ -131,11 +155,18 @@ parser.add_argument("--num", default=1, type=int, required=False, help="number o
 parser.add_argument("--templates", default="datasets/req_res_templates.txt", help="templates for request/response pairs.")
 parser.add_argument("--vuln", required=True, choices=['HTTP_HEADERS','XSS'], help="Select category of vulnerability")
 parser.add_argument("--verbose", action="store_true", help="Activates detailed log output")
+parser.add_argument("--instruction", default="", required=False, help="Special instruction for the agent that is introducing vuln.")
+parser.add_argument("--nofp", action="store_true", required=False, help="Only store vulnerable req/res pair.")
+parser.add_argument("--analyze", required=False, action="store_true", help="Only analyze stored training data")
 args = parser.parse_args()
 
 if args.verbose:
     logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+if args.analyze:
+    AnalyzeTrainingData()
+    exit(0)
 
 generate_data()
 

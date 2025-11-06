@@ -1,8 +1,9 @@
 from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForCausalLM
 from dotenv import load_dotenv
-import os, torch, logging, datasets, json, argparse
+import os, torch, logging, datasets, json, argparse, sqlite3
 from peft import LoraConfig, get_peft_model
 from datasets import load_dataset
+import pandas as pd
 from JanusLModel import JanusSequenceClassification
 from torch.utils.data import DataLoader
 from torch.optim import AdamW 
@@ -33,63 +34,68 @@ if args.verbose:
     logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def AnalyzeTrainingData():
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    token_lengths = []
-    with open("datasets/reasoning.jsonl", "r", encoding="utf-8") as f:
-        file_data = "".join(f.readlines())
-        items = json.loads(file_data)
-        for item in items:
-            full_text = item["prompt"] + item["reasoning"]
-            tokenized = tokenizer(full_text, truncation=False)
-            token_lengths.append(len(tokenized["input_ids"]))
-    plt.style.use('science')
-    plt.figure(figsize=(10, 6))
-    plt.hist(token_lengths, bins=10, color='skyblue', edgecolor='black')
-    plt.title("Token Count Distribution in Training Data")
-    plt.xlabel("Number of Tokens")
-    plt.ylabel("Frequency")
-    plt.grid(True)
-    plt.savefig("imgs/training-data-tokens-distribution.png")
+def load_data():
+    conn = sqlite3.connect('datasets/data.db')
+    df = pd.read_sql_query("SELECT * FROM training_data", conn)
+    from datasets import Dataset
+    dataset = Dataset.from_pandas(df)
+    return dataset
 
 def StartTraining():
     if args.cpu:
         torch.set_num_threads(1)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    dataset = load_dataset("json", data_files="datasets/reasoning.jsonl")
+    dataset = load_data()
     tokenizer.pad_token = tokenizer.eos_token
+    with open("prompts/training_reasoning_self_classification.txt", "r", encoding="utf-8") as f: prompt_tmp = f.read()
 
     def tokenize_fn(sample):
-        prompt = sample["prompt"]
-        full_text = prompt + sample["reasoning"] + "\n\n### Response:" + str(sample["classification"])
-        tokenized = tokenizer(
-            full_text,
-            truncation=True,
-            padding="max_length",
-            max_length=2048,
+        full_text = (
+            prompt_tmp
+            .replace("{request}", sample["request"])
+            .replace("{response}", sample["response"])
+            .replace("{reasoning}", sample["analysis"])
+            .replace("{result}", "1" if sample["is_vulnerable"] else "0")
         )
-        prompt_ids = tokenizer(prompt, truncation=True, max_length=512).input_ids
-        prompt_len = len(prompt_ids)
-        labels = [-100] * prompt_len + tokenized["input_ids"][prompt_len:]
-        labels += [-100] * (512 - len(labels))
+
+        input_text = full_text.split("<<<<>>>>")[0].strip()
+        output_text = full_text.split("<<<<>>>>")[1].strip()
+        full_text = full_text.replace("<<<<>>>>","")
+        input_tokens = tokenizer(input_text, truncation=True, max_length=1024, add_special_tokens=False)
+        output_tokens = tokenizer(output_text, truncation=True, max_length=1024, add_special_tokens=False)
+        input_ids = input_tokens["input_ids"] + output_tokens["input_ids"]
+        attention_mask = [1] * len(input_ids)
+        labels = [-100] * len(input_tokens["input_ids"]) + output_tokens["input_ids"]
+        max_len = 2048
+        pad_len = max_len - len(input_ids)
+        if pad_len > 0:
+            input_ids += [tokenizer.pad_token_id] * pad_len
+            attention_mask += [0] * pad_len
+            labels += [-100] * pad_len
+        else:
+            input_ids = input_ids[:max_len]
+            attention_mask = attention_mask[:max_len]
+            labels = labels[:max_len]
         return {
-            "input_ids": tokenized["input_ids"],
-            "attention_mask": tokenized["attention_mask"],
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
             "labels": labels,
         }
+    
     logger.info("Tokenizing dataset...")
     if args.cpu:
         tokenized = dataset.map(
             tokenize_fn, 
             batched=False, 
-            remove_columns=dataset["train"].column_names, 
+            remove_columns=dataset.column_names,
             num_proc=None)
     else:
         tokenized = dataset.map(
-            tokenize_fn, 
-            remove_columns=dataset["train"].column_names)
-    train_dataset = tokenized["train"].select(range(min(10, len(tokenized["train"]))))
-
+            tokenize_fn,
+            remove_columns=dataset.column_names
+            )
+    train_dataset = tokenized
+    
     logger.info("Loading base model...")
     base_model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float32, device_map=None)
     if args.cpu:
@@ -192,7 +198,7 @@ def StartTraining():
     # Fir the trend line
     coeffs = np.polyfit(steps, losses, deg=1)
     trend_line = np.poly1d(coeffs)
-
+    plt.rcParams.update({'font.size': 14})
     plt.style.use('science')
     plt.figure(figsize=(7, 4))
     plt.plot(steps, losses, marker="o")
@@ -201,8 +207,8 @@ def StartTraining():
     plt.ylabel("Training Loss")
     plt.title("Training LoRA Adapter")
     plt.grid(True)
-    #plt.savefig("imgs/fine-tuning-training-loss.png")
+    if args.charts:
+        plt.savefig("imgs/fine-tuning-training-loss.png")
     plt.show()
 
-AnalyzeTrainingData()
 StartTraining()

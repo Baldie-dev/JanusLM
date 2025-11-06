@@ -50,7 +50,7 @@ Data has been prepared in following format:
 
 *Note: This section is still in design phase...*
 
-Templates of realistic HTTP request/response pairs were combined with agents using larger models to generate synthetic training data:
+High-quality of manually crafted templates of realistic HTTP request/response pairs were passed through multiple agents that used larger models to generate synthetic training data. Each agent performed small mutations to the templates to expand 
 
 ![synthentic-data-generation](imgs/synthetic-data-generation.png)
 
@@ -67,9 +67,14 @@ options:
   --vuln {HTTP_HEADERS,XSS} Select category of vulnerability
 ```
 
+for example:
+```console
+python src\data_generator.py --verbose --vuln HTTP_HEADERS --num 5 --instruction "Do not introduce CORS misconfiguration, but introduce HSTS misconfiguration"
+```
+
 To generate one pair of high-quality training data, it costs on average:
-- Input tokens: ~3500
-- Output tokens: ~1700
+- Input tokens: ~4000
+- Output tokens: ~10000
 
 Current token distribution in training data (*Larger dataset to be prepared*):
 
