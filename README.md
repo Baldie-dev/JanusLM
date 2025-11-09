@@ -65,6 +65,7 @@ Templates for HTTP request/response pairs were randomly collected and sanitized 
 
 For training data generation, please see `src/data_generator.py`:
 ```console
+# python src\data_generator.py -h
 usage: data_generator.py [-h] [--num NUM]
                          [--templates TEMPLATES] --vuln
                          {HTTP_HEADERS,XSS} [--verbose]
@@ -89,7 +90,7 @@ options:
 
 for example:
 ```console
-python src\data_generator.py --verbose --vuln HTTP_HEADERS --num 5 --instruction "Do not introduce CORS misconfiguration, but introduce HSTS misconfiguration"
+# python src\data_generator.py --verbose --vuln HTTP_HEADERS --num 5 --instruction "Do not introduce CORS misconfiguration, but introduce HSTS misconfiguration"
 ```
 
 To generate one pair of high-quality training data, following number of tokens has been consumed:
@@ -160,6 +161,8 @@ $$ Scaling = \frac{1}{\begin{pmatrix} |A| \\\ 2 \end{pmatrix}} \sum_{\substack{a
 
 # Results
 
+*Note: At the moment results only for HTTP headers analysis and XSS are included. It will be probably expanded further*
+
 ## Definition of implemented models
 
 Explanation of model types:
@@ -170,14 +173,26 @@ Explanation of model types:
 - `<base_model>-FT-CH`: Fine-Tuned model that performs false-positive analysis by leveraging classification head.
 - `<base_model>-FT-PE-CH`: Fine-Tuned model with prompt engineering that performs false-positive analysis by leveraging classification head.
 
-#### Baseline vs Proposal 1 and Proposal 2
+### Fine-Tuning Sample Size
+
+*Note: Chart that show performance of LoRA based on the size of training data. Mainly to show difference between 100 manually sampled data vs 1000 semi-manually curated data vs 5000 samples without manual curation.*
+
+### Test-Time Scaling
+
+*Note: Chart that show how number of generated tokens during reasoning/analysis phase affects performance*
+
+### Classification Head Shape
+
+*Note: Chart that shows how different shapes of classification head affects performance*
+
+### Baseline vs Proposal
 Comparison of accuracy between different models:
 ![model-accuracy-benchmark](imgs/ollama-3.1-1B-benchmark.png)
 
-1. Evaluation of different size/shape of classification head on accuracy.
-2. Evaluation of reasoning length on accuracy.
-3. Evaluation of fine-tuning approaches / effect of sample size on accuracy.
+### Performance by Vulnerability Class
 
+*Note: Chart that shows how model performs for each vulnerability class. To to show weaknesses.*
+ 
 ## Pre-Requisities
 
 - llama-cpp-python
@@ -197,15 +212,30 @@ LLM_API_URL=http://127.0.0.1:8000/v1
 LLM_API_KEY=dummy_key
 ```
 
-2. Update `datasets/reasoning.jsonl` with training data for fine-tuning.
+2. Update `datasets/req_res_templates.txt` with pairs of request and responses in the format:
+```
+<RAW HTTP REQUEST 1>
+<<<<>>>>
+<RAW HTTP RESPONSE 1>
+<<<<>>>>
+<RAW HTTP REQUEST 2>
+<<<<>>>>
+<RAW HTTP RESPONSE 2>
+```
 
-3. Start LoRA training first via command:
+3. Start training data generator that will use templates to generate test data for specific vulnerability class. For example:
+
 ```console
-usage: trainer.py [-h] --mode {lora,class} [--cpu] [--output OUTPUT] [--verbose] [--charts]
+# python src\data_generator.py --verbose --vuln HTTP_HEADERS --num 5 --instruction "Do not introduce CORS misconfiguration, but introduce HSTS misconfiguration" --nofp
+```
+
+4. Start LoRA training via command:
+```console
+# python lora_trainer.py -h
+usage: lora_trainer.py [-h] --mode {lora,class} [--cpu] [--output OUTPUT] [--verbose] [--charts]
 
 options:
   -h, --help           show this help message and exit
-  --mode {lora,class}  Triggers training either for LoRA or Classification head
   --cpu                Safe and slow training on CPU, for compatibility reasons
   --output OUTPUT      output folder for trained model
   --verbose            Verbose output during training
@@ -213,13 +243,13 @@ options:
 ```
 for example:
 ```console
-python src/trainer.py --mode lora --cpu --output lora-adapter --charts
+# python src/lora_trainer.py --cpu --output lora-adapter --charts
 ```
 
 4. Start Classification head training with previously trained LoRA adapters:
 
 ```console
-python src/trainer.py --mode class --cpu --output class-model --input lora-adapter --charts
+# python src/class_trainer.py --cpu --output class-model --adapter lora-adapter --charts
 ```
 
 ## Execution
@@ -228,6 +258,12 @@ To execute benchmarks:
 ```bash
 python src/benchmark.py
 ```
+
+# Sources
+
+- [1] Simple test-time scaling (https://arxiv.org/pdf/2501.19393)
+- [2] TinyLLM: A Framework for Training and Deploying Language Models at the Edge Computers (https://arxiv.org/abs/2412.15304)
+- [3] Tina: Tiny Reasoning Models via LoRA (https://arxiv.org/abs/2504.15777)
 
 ## Notes to self
 
