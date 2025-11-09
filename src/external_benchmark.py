@@ -6,7 +6,6 @@ from utils import Utils
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", default="benchmark_out", required=False, help="Output folder for benchmark results")
 parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during benchmark")
-parser.add_argument("--prompt", required=True, help="Prompt that is submited for benchmark")
 args = parser.parse_args()
 
 # Init global vars
@@ -27,7 +26,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS ext_benchmark (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             model TEXT NOT NULL,
-            vuln_id INTEGER NOT NULL,
+            task_id INTEGER NOT NULL,
             result BOOL NOT NULL
         )
         ''')
@@ -35,7 +34,7 @@ def init_db():
 
 def store_result(model, vuln_id, result):
     cursor.execute('''
-        INSERT INTO ext_benchmark (model, vuln_id, result)
+        INSERT INTO ext_benchmark (model, task_id, result)
         VALUES (?, ?, ?)
     ''', (model, vuln_id, result))
     conn.commit()

@@ -28,24 +28,24 @@ logger = logging.getLogger(__name__)
 
 # Load benchmark data
 eval_data = Utils.load_data()
-vuln_id = Utils.get_vuln_id()
+vuln_id = Utils.get_vuln_id(args.vuln)
 
 def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS int_benchmark (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             model TEXT NOT NULL,
-            vuln_id INTEGER NOT NULL,
+            task_id INTEGER NOT NULL,
             result BOOL NOT NULL
         )
         ''')
     conn.commit()
 
-def store_result(result):
+def store_result(result, model_version):
     global vuln_id
-    model = args.model
+    model = args.model+model_version
     cursor.execute('''
-        INSERT INTO int_benchmark (model, vuln_id, result)
+        INSERT INTO int_benchmark (model, task_id, result)
         VALUES (?, ?, ?)
     ''', (model, vuln_id, result))
     conn.commit()
@@ -121,4 +121,5 @@ def run_benchmark():
 
 # Start benchmark
 init_db()
+exit(1)
 run_benchmark()
