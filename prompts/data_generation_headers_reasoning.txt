@@ -5,12 +5,6 @@ Evaluate HTTP response headers for missing or misconfgired any security headers.
 
 {HTTP_Header_Policies}
 
-If HTTP response has cache-control header that may cause proxies or browsers to cache responses, validate sensitivity of the data in the response. If HTTP response does not contain sensitive or private data do not mention cache-control header.
-If Access-Control-Allow are too permissive, highlight it as an issue.
-Do not consider Access-Control-Allow-Origin as too permissive, if it contains only a single host.
-Response should not leak any technical details about backend service, but consider this as an issue, only if the details contains a version of used product or hints what kind of programming language application is using.
-Do not consider lax CSP as a big issue and ignore 'nonce-rAnd0m123'.
-
 Do not evaluate the content of the response and assume that the request/response is doing exactly how the app was designed and security of it already assessed. Focus only on HTTP response headers.
 
 Output only single paragrath that contains your analysis.

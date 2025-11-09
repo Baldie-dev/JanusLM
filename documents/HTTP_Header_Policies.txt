@@ -1,6 +1,6 @@
 ## HTTP Header Policies
 
-Following HTTP header policies must be followed or irelevant headers must be ignored to prevent raising false-positives.
+Following HTTP header policies must be followed and irelevant headers must be ignored to prevent raising false-positives.
 
 It is not mandatory to implement following HTTP headers as protection is already provided by CSP headers:
 - X-Content-Type-Options
@@ -13,3 +13,13 @@ It is not mandatory to implement following HTTP headers as protection is already
 - Cross-Origin-Embedder-Policy
 - Cross-Origin-Opener-Policy
 - Access-Control-Allow-Methods
+
+Strict-Transport-Security header must be present and properly configured.
+
+Content-Security-Policy header must be present and properly configured. Ignore nonce issues in CSP.
+
+If HTTP response contain cache-control header that may cause proxies or browsers to cache responses, validate sensitivity of the data in the response. If HTTP response does not contain sensitive or private data cache-control header is not required.
+
+Server header should not leak versions of the backend server. Generic name without a version is fine.
+
+Access-Control-Allow-Origin header is an issue only if it is too permissive. If it contains only single host, it is ok.
