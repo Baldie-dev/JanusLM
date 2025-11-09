@@ -3,7 +3,7 @@ Reasoning Classification Dual-Head Transformer with LoRA-Based Fine-Tuning for a
 
 ## Description
 
-This project proposes and evaluates a Dual-Head Large Language Model (LLM) architecture utilizing Parameter-Efficient Fine-Tuning (Low-Rank Adaptation), specifically designed for joint generative reasoning and cybersecurity-related classification tasks
+This project proposes and evaluates a Dual-Head Large Language Model (LLM) architecture utilizing Parameter-Efficient Fine-Tuning (Low-Rank Adaptation), specifically designed for joint generative reasoning (leveraging test-time scaling) for cybersecurity-related classification tasks
 
 By leveraging multiple tailored LoRA adapters, the model can efficiently adapt to perform security analysis tasks without changing the original base weights, keeping the reasoning power of the pretrained LLM minimally impacted while adding security domain specific intelligence.
 
@@ -26,10 +26,11 @@ The primary goal is to explore the possibility of using a small, locally hosted,
 - Compatible with any open-source model.
 - PEFT (LoRA) fine-tuned for analysis creation of request/response pairs.
 - Supports swapping LoRA matrices to target different analysis types.
+- Test-type scaling implemented to control computation allocated to the problem.
 - Includes a fully trained classification head (Multi-Layer Perceptron) for false-positive evaluation.
 - Optimized for local deployment on the user's device.
 
-## Training
+# Training
 
 *Note: Training data has been omited from the repository.*
 
@@ -49,7 +50,7 @@ CREATE TABLE IF NOT EXISTS training_data (
 
 ### Synthetic Data Generation
 
-High-quality of manually crafted templates of realistic HTTP request/response pairs were passed through multiple agents that used larger models to generate synthetic training data. Each agent performed small mutations to the templates to expand overall dataset for training (from 20 templates to 1000 samples).
+High quality of manually crafted templates of realistic HTTP request/response pairs were passed through multiple agents that used larger models to generate synthetic training data. Each agent performed small mutations to the templates to expand overall dataset for training (from 20 templates to 1000 samples).
 
 ![synthentic-data-generation](imgs/synthetic-data-generation.png)
 
@@ -107,7 +108,13 @@ Evolution of the loss function during fine-tuning of a LoRA adapter for creation
 
 Full MLP (Multi-layered perceptron) training for data classification performed on the output of the last hidden state. (probably mean of all outputs)
 
-## Evaluation
+Following step-by-step process was implemented:
+1. Load Training Dataset
+2. Perform Inference using token generation head and store state of the last hidden layer.
+3. Create a training dataset for classification head from the state of hidden layer and expected output.
+4. Perform regular ML training only for the classification head.
+
+# Evaluation
 
 Evaluation was performed using a cross-validation technique (80/20) by splitting the training data into two folds, where one was used for training and the other for validation.
 
@@ -120,7 +127,7 @@ Definition of terms:
 
 #### Precision
 
-Calculation of how many marked findings were actually correct (how many false-positives were generated):
+Calculation of how many marked findings were actually correct as we want to limit the number of false-positive the agent generates. Precision in the end will be more important than overall accuracy.
 
 $$Precision = \frac{TP}{TP+FP}$$
 
@@ -130,10 +137,26 @@ Overall correctness:
 
 $$Accuracy = \frac{TP+TN}{TP+FP+TN+FN}$$
 
-### Results
+#### Control
+
+This metric measures the extent to which we allow controllability over the use of compute, meaning that this metric help us to dynamically adjust the amount of computation allocated to the problem during inference.
+
+$$ Control = \frac{1}{|A|}\sum_{a\subset A}{(a_{min} \le a \le a_{max})}$$
+
+where $a{min}$ and $a{max}$ represents minimum and maximum number of generated token (test-time).
+
+#### Scaling
+
+This metric measures how performance (accuracy or precision) improves as a test-time compute is increased.
+
+$$ Scaling = \frac{1}{\begin{pmatrix} |A| \\\ 2 \end{pmatrix}} \sum_{\substack{a,b\subset A \\ b>a}}{\frac{f(b)-f(a)}{b-a}}$$
+
+# Results
+
+## Definition of implemented models
 
 Explanation of model types:
-- `<base_model>-SC`: Base model that performs false-positive analysis by generating token (1 or 0).
+- `<base_model>-SC`: Base model that performs false-positive analysis by generating boolean token (1 or 0).
 - `<base_model>-PE-SC`: Base model with prompt engineering that performs false-positive analysis by generating token (1 or 0).
 - `<base_model>-FT-SC`: Fine-Tuned model that performs false-positive analysis by generating token (1 or 0).
 - `<base_model>-FT-PE-SC`: Fine-Tuned model with prompt engineering that performs false-positive analysis by generating token (1 or 0).

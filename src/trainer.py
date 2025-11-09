@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForCausalLM
+from transformers import DataCollatorForLanguageModeling, AutoTokenizer, TrainingArguments, Trainer, AutoModelForCausalLM
 from dotenv import load_dotenv
 import os, torch, logging, datasets, json, argparse, sqlite3
 from peft import LoraConfig, get_peft_model
@@ -7,11 +7,10 @@ import pandas as pd
 from JanusLModel import JanusSequenceClassification
 from torch.utils.data import DataLoader
 from torch.optim import AdamW 
-from transformers import get_linear_schedule_with_warmup
-from transformers import DataCollatorForLanguageModeling
 import matplotlib.pyplot as plt
 import numpy as np
 import scienceplots
+from peft import PeftModel
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--mode", choices=['lora','class'], required=True, help="Triggers training either for LoRA or Classification head")
@@ -19,6 +18,7 @@ parser.add_argument("--cpu", action="store_true", required=False, help="Safe and
 parser.add_argument("--output", default="lora-adapter", required=False, help="output folder for trained model")
 parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during training")
 parser.add_argument("--charts", action="store_true", required=False, help="If sets, training charts are generated.")
+parser.add_argument("--steps", required=False, default=50, help="Number of training steps")
 args = parser.parse_args()
 
 if args.cpu:
@@ -41,10 +41,9 @@ def load_data():
     dataset = Dataset.from_pandas(df)
     return dataset
 
-def StartTraining():
+def load_dataset(tokenizer):
     if args.cpu:
         torch.set_num_threads(1)
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
     dataset = load_data()
     tokenizer.pad_token = tokenizer.eos_token
     with open("prompts/self_classification_input.txt", "r", encoding="utf-8") as f: prompt_input_tmp = f.read()
@@ -75,7 +74,6 @@ def StartTraining():
             "attention_mask": attention_mask,
             "labels": labels,
         }
-    
     logger.info("Tokenizing dataset...")
     if args.cpu:
         tokenized = dataset.map(
@@ -88,15 +86,17 @@ def StartTraining():
             tokenize_fn,
             remove_columns=dataset.column_names
             )
-    train_dataset = tokenized
     
+
+    return tokenized
+
+def StartLoRATraining():
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    train_dataset = load_dataset()
     logger.info("Loading base model...")
     base_model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float32, device_map=None)
     if args.cpu:
         base_model.to("cpu")
-
-    # BugFix: disabling cache
-    if args.cpu:
         if hasattr(base_model.config, "use_cache"):
             base_model.config.use_cache = False
 
@@ -146,7 +146,7 @@ def StartTraining():
         raise
 
     # Prepare training parameter
-    max_trainning_steps = 50
+    max_trainning_steps = args.steps
     if args.cpu:
         training_args = TrainingArguments(
             output_dir="./lora-out",
@@ -205,4 +205,23 @@ def StartTraining():
         plt.savefig("imgs/fine-tuning-training-loss.png")
     plt.show()
 
-StartTraining()
+def StartClassTraining():
+    # Load the training dataset
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    train_dataset = load_dataset()
+    logger.info("Loading base model...")
+    base_model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float32, device_map=None)
+    if args.cpu:
+        base_model.to("cpu")
+        if hasattr(base_model.config, "use_cache"):
+            base_model.config.use_cache = False
+    model = PeftModel.from_pretrained(base_model, ADAPTER_DIRECT_CLASS_PATH)
+
+    # Perform inference and store the hidden layer
+    # Start training on input as values from hidden layer vs expected output
+    pass
+
+if args.mode == "lora":
+    StartLoRATraining()
+else:
+    StartClassTraining()
