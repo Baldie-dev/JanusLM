@@ -161,7 +161,7 @@ $$ Scaling = \frac{1}{\begin{pmatrix} |A| \\\ 2 \end{pmatrix}} \sum_{\substack{a
 
 # Results
 
-*Note: At the moment results only for HTTP headers analysis and XSS are included. It will be probably expanded further*
+*Note: At the moment results only for HTTP headers analysis and XSS are included. It will be probably expanded further for different vulnerability classes.*
 
 ## Definition of implemented models
 

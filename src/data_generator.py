@@ -4,6 +4,17 @@ from openai import OpenAI
 import matplotlib.pyplot as plt
 from utils import Utils
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--num", default=1, type=int, required=False, help="number of generated request/response pairs")
+parser.add_argument("--templates", default="datasets/req_res_templates.txt", help="templates for request/response pairs.")
+parser.add_argument("--vuln", required=True, choices=Utils.get_vuln_choices(), help="Select category of vulnerability")
+parser.add_argument("--verbose", action="store_true", help="Activates detailed log output")
+parser.add_argument("--instruction", default="", required=False, help="Special instruction for the agent that is introducing vuln.")
+parser.add_argument("--nofp", action="store_true", required=False, help="Only store vulnerable req/res pair.")
+parser.add_argument("--analyze", required=False, action="store_true", help="Only analyze stored training data")
+args = parser.parse_args()
+
+# Initialize
 conn = sqlite3.connect('datasets/data.db')
 cursor = conn.cursor()
 total_in_tokens = 0
@@ -16,10 +27,7 @@ client = OpenAI(
     base_url=os.getenv("LLM_API_URL")
     )
 
-VULNERABILITIES = [
-    [1, 'HTTP_HEADERS', 'Misconfigured HTTP Headers'],
-    [2, 'XSS', 'Cross-Site Scripting']
-]
+VULNERABILITIES = Utils.get_vulnerabilities()
 
 def init():
     cursor.execute('''
@@ -157,16 +165,6 @@ def generate_data():
         store_data(vuln_request.strip(), vuln_response.strip(), True, reasoning_vuln.strip())
 
 init()
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--num", default=1, type=int, required=False, help="number of generated request/response pairs")
-parser.add_argument("--templates", default="datasets/req_res_templates.txt", help="templates for request/response pairs.")
-parser.add_argument("--vuln", required=True, choices=['HTTP_HEADERS','XSS'], help="Select category of vulnerability")
-parser.add_argument("--verbose", action="store_true", help="Activates detailed log output")
-parser.add_argument("--instruction", default="", required=False, help="Special instruction for the agent that is introducing vuln.")
-parser.add_argument("--nofp", action="store_true", required=False, help="Only store vulnerable req/res pair.")
-parser.add_argument("--analyze", required=False, action="store_true", help="Only analyze stored training data")
-args = parser.parse_args()
 
 if args.verbose:
     logging.basicConfig(level=logging.INFO)

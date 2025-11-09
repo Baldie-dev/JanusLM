@@ -18,6 +18,14 @@ You can do quick analysis using 1 paragraph, but the result has to be:
 1 - HTTP response contains misconfigured headers and requires attention.
 0 - HTTP response is properly configured.
 
+<request>
+{request}
+</request>
+
+<response>
+{response}
+</response>
+
 Output in format:
 
 ### Analysis
@@ -26,10 +34,4 @@ this is my analysis and header is secure.
 
 ### Result: 0
 
-<request>
-{request}
-</request>
-
-<response>
-{response}
-</response>
+output:

@@ -4,6 +4,32 @@ import pandas as pd
 
 class Utils:
     @staticmethod
+    def get_vulnerabilities():
+        return [
+            [1, 'HTTP_HEADERS', 'Misconfigured HTTP Headers'],
+            [2, 'XSS', 'Cross-Site Scripting'],
+            [3, 'SQLI', "SQL Injection"],
+            [4, 'INFO', "Information Disclosure"]
+        ]
+    
+    @staticmethod
+    def get_vuln_choices():
+        vulns = Utils.get_vulnerabilities()
+        res = []
+        for vuln in vulns:
+            res.append(vuln[1])
+        return res
+    
+    @staticmethod
+    def load_prompt(prompt_name, documents):
+        with open("prompts/"+prompt_name, "r", encoding="utf-8") as f: template = f.read()
+        # Automatically inject documents
+        for filename, content in documents.items():
+            if filename in template:
+                template = template.replace("{"+filename+"}",content)
+        return template
+    
+    @staticmethod
     def load_documents():
         folder_path = 'documents'
         text_data = {}

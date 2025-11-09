@@ -1,164 +1,103 @@
-import json, torch
+import json, torch, argparse, logging, sqlite3
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from dotenv import load_dotenv
 import os
-import matplotlib.pyplot as plt
 from peft import PeftModel
-import scienceplots
-import matplotlib as mpl
+from utils import Utils
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--cpu", action="store_true", required=False, help="Safe and slow benchmark on CPU, for compatibility reasons")
+parser.add_argument("--output", default="benchmark_out", required=False, help="Output folder for benchmark results")
+parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during benchmark")
+parser.add_argument("--model", required=True, help="Name of the base model")
+parser.add_argument("--lora-adadpter", required=False, help="Folder name with LoRA adapter")
+parser.add_argument("--prompt", required=True, help="Prompt that is submited for benchmark")
+parser.add_argument("--vuln", required=True, choices=Utils.get_vuln_choices(), help="Select category of vulnerability")
+args = parser.parse_args()
+
+# Init environment
 load_dotenv()
 model_path = os.getenv("MODEL_PATH")
-ADAPTER_DIRECT_CLASS_PATH = "./lora_adapter_direct_class"
-mpl.rcParams['text.usetex'] = False
-plt.rc('text', usetex=False)
-model = 'ollama-3.1-1B'
+conn = sqlite3.connect('datasets/data.db')
+cursor = conn.cursor()
+documents = Utils.load_documents()
+
+if args.verbose:
+    logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load benchmark data
-eval_data = []
-with open("datasets/reasoning.jsonl", "r", encoding="utf-8") as f:
-    content = ''.join(f.readlines())
-    items = json.loads(content)
-    for item in items:
-        eval_data.append({
-            "prompt": item["prompt"],
-            "true_class": item["classification"]
-        })
+eval_data = Utils.load_data()
 
-def run_benchmark_default_self_classification():
-    print("Running default self classification benchmark")
+def init_db():
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS int_benchmark (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            model TEXT NOT NULL,
+            vuln_id INTEGER NOT NULL,
+            result BOOL NOT NULL
+        )
+        ''')
+    conn.commit()
+
+def store_result(model, vuln_id, result):
+    cursor.execute('''
+        INSERT INTO int_benchmark (model, vuln_id, result)
+        VALUES (?, ?, ?)
+    ''', (model, vuln_id, result))
+    conn.commit()
+
+def run_benchmark():
+    global documents
+    logger.info("Loading models and prompts...")
     # Run inference
     model = AutoModelForCausalLM.from_pretrained(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model.eval()
-    model.config.is_decoder = True
-    model.config.is_encoder_decoder = False
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-    model.config.pad_token_id = tokenizer.eos_token_id
-    print(f"Model type: {model.config.model_type}")
-    print(f"Is Decoder: {model.config.is_decoder}")
-
-    def classify_prompt(prompt):
-        prompt += """Analyze following pair of request/response from cybersecurity perspective.
-Evaluate HTTP response headers for missing or misconfgired any security headers.
-
-Answer with only single digit 1 or 0 when:
-1 - HTTP response contains misconfigured headers and requires attention.
-0 - HTTP response is properly configured.\n\n### Response:"""
-        inputs = tokenizer(prompt, return_tensors="pt").to("cpu")
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=2,
-                eos_token_id=tokenizer.eos_token_id,
-                pad_token_id=tokenizer.eos_token_id
-            )
-        response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        #print(response)
-        if "1" in response[-1]:
-            return 1
-        elif "0" in response[-1]:
-            return 0
-        else:
-            return None
-
-    correct = 0
-    total = 0
-
-    for item in eval_data:
-        pred = classify_prompt(item["prompt"])
-        total += 1
-        if pred is not None:
-            if pred == item["true_class"]:
-                correct += 1
-
-    accuracy = correct / total if total > 0 else 0
-    print(f"Model Accuracy: {accuracy:.2%} ({correct}/{total})")
-    return accuracy
-
-def run_benchmark_finetuned_self_classification():
-    print("Running fine-tunned self classification benchmark")
-    # Run inference
-    base_model = AutoModelForCausalLM.from_pretrained(model_path)
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = PeftModel.from_pretrained(base_model, ADAPTER_DIRECT_CLASS_PATH)
-
-    model.eval()
-    model.config.is_decoder = True
-    model.config.is_encoder_decoder = False
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-    model.config.pad_token_id = tokenizer.eos_token_id
-    print(f"Model type: {model.config.model_type}")
-    print(f"Is Decoder: {model.config.is_decoder}")
-
-    def classify_prompt(prompt):
-        prompt += """Analyze following pair of request/response from cybersecurity perspective.
-Evaluate HTTP response headers for missing or misconfgired any security headers.
-
-Answer with only single digit 1 or 0 when:
-1 - HTTP response contains misconfigured headers and requires attention.
-0 - HTTP response is properly configured.\n\n### Response:"""
-        inputs = tokenizer(prompt, return_tensors="pt").to("cpu")
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=2,
-                eos_token_id=tokenizer.eos_token_id,
-                pad_token_id=tokenizer.eos_token_id
-            )
-        response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        #print(response)
-        if "1" in response[-1]:
-            return 1
-        elif "0" in response[-1]:
-            return 0
-        else:
-            return None
-
-    correct = 0
-    total = 0
-
-    for item in eval_data:
-        pred = classify_prompt(item["prompt"])
-        total += 1
-        if pred is not None:
-            if pred == item["true_class"]:
-                correct += 1
-
-    accuracy = correct / total if total > 0 else 0
-    print(f"Model Accuracy: {accuracy:.2%} ({correct}/{total})")
-    return accuracy
-
-default_self = run_benchmark_default_self_classification(20)
-finetuned_self = run_benchmark_finetuned_self_classification(20)
-
-categories = [model+"-SC",model+"-FT-SC",model+"-FT-CH","GPT4","GPT4-Prompt-Engineering"]
-gpt4 = gpt4pe = total = 0
-with open("datasets/reasoning.jsonl", "r", encoding="utf-8") as f:
-    content = ''.join(f.readlines())
-    items = json.loads(content)
-    for item in items:
-        if item['classification'] == item['gpt5_classification']:
-            gpt4 += 1
-        if item['classification'] == item['gpt5_classification_prompt_engineering']:
-            gpt4pe += 1
-        total += 1
-results = [default_self, finetuned_self, 0, gpt4/total, gpt4pe/total]
-
-# Plotting
-plt.rcParams.update({'font.size': 14})
-plt.style.use('science')
-plt.figure(figsize=(10, 6))
-colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'] 
-plt.bar(categories, results, color=colors)
-plt.xlabel('Model')
-plt.ylabel('Accuracy')
-plt.title('Accuracy Benchmark')
-plt.tight_layout()
+    if args.lora_adapter:
+        model = PeftModel.from_pretrained(model, args.lora_adapter)
+    prompt_direct = Utils.load_prompt("benchmark_direct_self_class.txt", documents)
+    prompt_class = Utils.load_prompt("benchmark_self_class.txt", documents)
+    prompt_class_pe = Utils.load_prompt("benchmark_self_class_pe.txt", documents)
     
-# Save the plot
-output_path = 'imgs/'+model+'-benchmark.png'
-plt.savefig(output_path)
-plt.close()
+    model.eval()
+    model.config.is_decoder = True
+    model.config.is_encoder_decoder = False
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    model.config.pad_token_id = tokenizer.eos_token_id
+    logger.info(f"Model type: {model.config.model_type}")
+    logger.info(f"Is Decoder: {model.config.is_decoder}")
+
+    def classify(prompt):
+        prompt += """:"""
+        inputs = tokenizer(prompt, return_tensors="pt").to("cpu")
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=2,
+                eos_token_id=tokenizer.eos_token_id,
+                pad_token_id=tokenizer.eos_token_id
+            )
+        response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        if "1" in response[-1]:
+            return 1
+        elif "0" in response[-1]:
+            return 0
+        else:
+            return None
+
+    for item in eval_data:
+        pred = classify(item["prompt"])
+        total += 1
+        if pred is not None:
+            if pred == item["true_class"]:
+                correct += 1
+
+    accuracy = correct / total if total > 0 else 0
+    print(f"Model Accuracy: {accuracy:.2%} ({correct}/{total})")
+    return accuracy
+
+
+# Start benchmark
+init_db()
+run_benchmark()
