@@ -1,5 +1,9 @@
 # JanusLM
-Reasoning Classification Dual-Head Transformer with LoRA-Based Fine-Tuning for a Web Security false-positive evaluations.
+Reasoning Classification Dual-Head Transformer with LoRA-Based Fine-Tuning and Reinforcement Training via self-reflection for a Web Security false-positive evaluations.
+
+## Goal
+
+The primary goal is to explore the possibility of using a very small (<10B), hyper-focused model that implements multiple new techniques to deliver similar performance comparable to the largest general models. The second goal focuses on generating synthetic, high-quality training data and evaluating various approaches to training, fine-tuning, base model selection, and classification methods.
 
 ## Description
 
@@ -7,13 +11,9 @@ This project proposes and evaluates a Dual-Head Large Language Model (LLM) archi
 
 By leveraging multiple tailored LoRA adapters, the model can efficiently adapt to perform security analysis tasks without changing the original base weights, keeping the reasoning power of the pretrained LLM minimally impacted while adding security domain specific intelligence.
 
-Dual-head design provides a multi-purpose inference, where the pre-trained and fine-tuned generative head creates detailed analysis and the trained classification head consisting of dense neural network delivers prediction.
+Reinforcement training via self-reflection is implemented after a first round fine-tunning. If model fails to correctly classify tasks on a first attempt, it is forced to perform second attempt. If second attempt succeced, reinforcment learning utilizing Group Relative Policy Optimization (GRPO) is used to reward tokens in second attempt. This can be also implemented during a run-time to gradually improve the model accuracy during normal usage.
 
-## Goal
-
-The primary goal is to explore the possibility of using a small, locally hosted, tailored model that delivers performance comparable to the largest commercial models. The second goal focuses on generating synthetic, high-quality training data and evaluating various approaches to training, fine-tuning, base model selection, and classification methods.
-
-Separate LoRA adapters will be implemented to handle different categories of vulnerabilities.
+Dual-head design provides a multi-purpose inference, where the pre-trained and fine-tuned generative head creates detailed analysis and the trained classification head consisting of dense neural network delivers classification prediction.
 
 ## Architecture
 
@@ -26,14 +26,15 @@ Separate LoRA adapters will be implemented to handle different categories of vul
 - PEFT (LoRA) for analysis creation of request/response pairs.
 - Supports swapping LoRA matrices to target different analysis types.
 - Test-type scaling implemented to control computation allocated to the problem.
+- Self-reflection to improve in areas where model may be lacking.
 - Includes a fully trained classification head (Multi-Layer Perceptron) for false-positive evaluation.
 - Optimized for local deployment on the user's device.
 
 # Training
 
-*Note: Training data has been omited from the repository. However, proposed generator for training data creation is still present.*
+*Note: Training data has been omited from the repository. However, implemented generator with the full workflow for training data creation is still present.*
 
-The training data was manually prepared by crafting pairs of insecure HTTP responses and their counterparts that are fully secure. This approach should help model to understand the main differences between false and true positive.
+The training data were manually prepared by crafting pairs of insecure HTTP responses and their counterparts that are fully secure. This approach should help model to understand the main differences between false and true positive.
 
 Data has been prepared in SQLite databse in format:
 ```sql
@@ -46,6 +47,24 @@ CREATE TABLE IF NOT EXISTS training_data (
     vuln_category INTEGER NOT NULL
 )
 ```
+
+### LoRA
+
+Standard LoRA implementation provided by PEFT was used. Pre-trained weights $W_0$ were frozen and adjusted by 2 trainable low-rank matrices $A$ and $B$: 
+
+$$ h(x) = W_0x + ABx $$
+
+### Self-Reflection
+
+*Note: TODO: diagram for self-refelction*
+
+Self-reflection, also refered as introspection serves during a training process to improve a reasoning / analysis capabilities of the model. When model fails to correctly classify the task, it is forced to evaluate its own analysis / reasoning to identify issues and to perform second classification attempt.
+
+If model correctly performs self-reflection and correctly classify the task, the introspection is used as a reward during Reinforcment Training.
+
+#### Group Relative Policy Optimization
+
+*Note: Add section about this approach*
 
 ### Synthetic Data Generation
 
@@ -103,7 +122,7 @@ Current token distribution in training data (*Larger dataset to be prepared*):
 
 ![Token-Data-Distribution](imgs/training-data-tokens-distribution.png)
 
-### 1. Phase:
+### 1. Phase: LoRA
 LoRA fine-tuning was applied to enhance analytical reasoning over request/response pairs. This was achieved using predefined, high-quality `x` examples that illustrated the desired type of analysis and the evaluation criteria to be considered.
 
 *Note: following training stats were collected on smaller model ollama-3.1-1B, with small subset of training data. This will be updated later...*
@@ -111,7 +130,15 @@ LoRA fine-tuning was applied to enhance analytical reasoning over request/respon
 Evolution of the loss function during fine-tuning of a LoRA adapter for creation of analysis for HTTP responses, showing that model is improving ability to perform reasoning.
 ![FineTuning-Training-Loss](imgs/fine-tuning-training-loss.png)
 
-### 2. Phase:
+### 2. Phase: Self-Reflection
+
+*Note: To add implementation*
+
+#### Failure Dataset
+
+Failure dataset was collected during training and evaluation and it consist of incorrectly classified tasks.
+
+### 3. Phase:
 *Still in design process...*
 
 Full MLP (Multi-layered perceptron) training for data classification performed on the output of the last hidden state. (probably mean of all outputs)
@@ -176,6 +203,12 @@ Explanation of model types:
 ### Fine-Tuning Sample Size
 
 *Note: Chart that show performance of LoRA based on the size of training data. Mainly to show difference between 100 manually sampled data vs 1000 semi-manually curated data vs 5000 samples without manual curation.*
+
+### Rank size / Training rate in PEFT
+
+*Note: Chart showing how rank of the matrices in LoRA affects accuracy*
+
+*Note: Chart showing if training rate affects accuracy*
 
 ### Test-Time Scaling
 
@@ -264,6 +297,8 @@ python src/benchmark.py
 - [1] Simple test-time scaling (https://arxiv.org/pdf/2501.19393)
 - [2] TinyLLM: A Framework for Training and Deploying Language Models at the Edge Computers (https://arxiv.org/abs/2412.15304)
 - [3] Tina: Tiny Reasoning Models via LoRA (https://arxiv.org/abs/2504.15777)
+- [4] Reflection paper...
+- [5] Group Relative Policy Optimization
 
 ## Notes to self
 

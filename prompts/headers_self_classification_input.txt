@@ -2,21 +2,11 @@
 
 Analyze following pair of request/response from cybersecurity perspective.
 Evaluate HTTP response headers for missing or misconfgired any security headers.
-
-Do not consider missing or misconfigured following headers as an issue:
-- X-Content-Type-Options
-- Permissions-Policy
-- Cache-control (only if response does not contain sensitive personal info)
-- X-XSS-Protection
-- Referrer-Policy
-- Cross-Origin-Resource-Policy
-- Cross-Origin-Opener-Policy
-
 Do not evaluate the content of the response and assume that the request/response is doing exactly how the app was designed and security of it already assessed. Focus only on HTTP response headers.
 
-You can do quick analysis using 1 paragraph, but the result has to be:
-1 - HTTP response contains misconfigured headers and requires attention.
-0 - HTTP response is properly configured.
+{HTTP_Header_Policies}
+
+{Expected_Output}
 
 <request>
 {request}

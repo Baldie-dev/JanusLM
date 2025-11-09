@@ -6,7 +6,7 @@ class Utils:
     @staticmethod
     def get_vulnerabilities():
         return [
-            [1, 'HTTP_HEADERS', 'Misconfigured HTTP Headers'],
+            [1, 'HTTP_HEADERS', 'Misconfigured HTTP Headers', 'headers_self_classification_input'],
             [2, 'XSS', 'Cross-Site Scripting'],
             [3, 'SQLI', "SQL Injection"],
             [4, 'INFO', "Information Disclosure"]
@@ -19,6 +19,18 @@ class Utils:
         for vuln in vulns:
             res.append(vuln[1])
         return res
+    
+    @staticmethod
+    def get_vuln_output_prompt(vuln_title):
+        for vuln in Utils.get_vulnerabilities():
+            if vuln[1] == vuln_title:
+                return vuln[3]
+    
+    @staticmethod
+    def get_vuln_id(vuln_title):
+        for vuln in Utils.get_vulnerabilities():
+            if vuln[1] == vuln_title:
+                return vuln[0]
     
     @staticmethod
     def load_prompt(prompt_name, documents):
@@ -49,7 +61,7 @@ class Utils:
         return dataset
     
     @staticmethod
-    def load_dataset(model_path, is_cpu, logger=None):
+    def load_training_dataset(model_path, vuln, is_cpu, logger=None):
         if logger:
             logger.info("Initializing tokenizer and loading dataset...")
         tokenizer = AutoTokenizer.from_pretrained(model_path, is_cpu)
@@ -57,13 +69,14 @@ class Utils:
             torch.set_num_threads(1)
         dataset = Utils.load_data()
         tokenizer.pad_token = tokenizer.eos_token
-        with open("prompts/self_classification_input.txt", "r", encoding="utf-8") as f: prompt_input_tmp = f.read()
+        with open("prompts/"+Utils.get_vuln_output_prompt(vuln)+".txt", "r", encoding="utf-8") as f: prompt_input_tmp = f.read()
         with open("prompts/self_classification_output.txt", "r", encoding="utf-8") as f: prompt_output_tmp = f.read()
+        with open("prompts/output_classification.txt", "r", encoding="utf-8") as f: prompt_output_format = f.read()
+        prompt_input_tmp = prompt_input_tmp.replace("{Expected_Output}", prompt_output_format)
 
         def tokenize_fn(sample):
             input_text = prompt_input_tmp.replace("{request}", sample["request"]).replace("{response}", sample["response"]).strip()
             output_text = prompt_output_tmp.replace("{reasoning}", sample["analysis"]).replace("{result}", "1" if sample["is_vulnerable"] else "0").strip()
-            full_text = input_text + output_text
 
             input_tokens = tokenizer(input_text, truncation=True, max_length=1024, add_special_tokens=False)
             output_tokens = tokenizer(output_text, truncation=True, max_length=1024, add_special_tokens=False)

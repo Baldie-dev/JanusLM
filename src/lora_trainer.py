@@ -14,6 +14,7 @@ parser.add_argument("--output", default="lora-adapter", required=False, help="ou
 parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during training")
 parser.add_argument("--charts", action="store_true", required=False, help="If sets, training charts are generated.")
 parser.add_argument("--steps", required=False, default=50, help="Number of training steps")
+parser.add_argument("--vuln", required=True, choices=Utils.get_vuln_choices(), help="Select category of vulnerability")
 args = parser.parse_args()
 
 if args.cpu:
@@ -30,7 +31,7 @@ if args.verbose:
 logger = logging.getLogger(__name__)
 
 def StartLoRATraining():
-    tokenizer, train_dataset = Utils.load_dataset(model_path=model_path, is_cpu=args.cpu)
+    tokenizer, train_dataset = Utils.load_training_dataset(model_path=model_path, vuln=args.vuln, is_cpu=args.cpu)
     logger.info("Loading base model...")
     base_model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float32, device_map=None)
     if args.cpu:

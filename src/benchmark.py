@@ -11,8 +11,8 @@ parser.add_argument("--output", default="benchmark_out", required=False, help="O
 parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during benchmark")
 parser.add_argument("--model", required=True, help="Name of the base model")
 parser.add_argument("--lora-adadpter", required=False, help="Folder name with LoRA adapter")
-parser.add_argument("--prompt", required=True, help="Prompt that is submited for benchmark")
 parser.add_argument("--vuln", required=True, choices=Utils.get_vuln_choices(), help="Select category of vulnerability")
+parser.add_argument("--max-tokens", default=100, required=False, help="Maximum number of tokens for analysis")
 args = parser.parse_args()
 
 # Init environment
@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 # Load benchmark data
 eval_data = Utils.load_data()
+vuln_id = Utils.get_vuln_id()
 
 def init_db():
     cursor.execute('''
@@ -40,7 +41,9 @@ def init_db():
         ''')
     conn.commit()
 
-def store_result(model, vuln_id, result):
+def store_result(result):
+    global vuln_id
+    model = args.model
     cursor.execute('''
         INSERT INTO int_benchmark (model, vuln_id, result)
         VALUES (?, ?, ?)
@@ -48,7 +51,7 @@ def store_result(model, vuln_id, result):
     conn.commit()
 
 def run_benchmark():
-    global documents
+    global documents, eval_data
     logger.info("Loading models and prompts...")
     # Run inference
     model = AutoModelForCausalLM.from_pretrained(model_path)
@@ -68,9 +71,33 @@ def run_benchmark():
     logger.info(f"Model type: {model.config.model_type}")
     logger.info(f"Is Decoder: {model.config.is_decoder}")
 
+    eval_dataset = eval_data[int(len(eval_data)*0.8):]
+
+    def reason(prompt):
+        new_prompt = prompt.replace("{analysis}", "")
+        analysis = ""
+        inputs = tokenizer(new_prompt, return_tensors="pt")
+        if args.cpu:
+            inputs = inputs.to("cpu")
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=args.max_tokens,
+                eos_token_id=tokenizer.eos_token_id,
+                pad_token_id=tokenizer.eos_token_id
+            )
+        analysis = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        # TODO: Check minimum number of tokens
+        analysis = analysis.split("### Result")[0]
+        return prompt.replace("{analysis}", analysis)
+
     def classify(prompt):
-        prompt += """:"""
-        inputs = tokenizer(prompt, return_tensors="pt").to("cpu")
+        if "{analysis}" in prompt:
+            prompt = reason(prompt)
+        prompt += "\n### Result: "
+        inputs = tokenizer(prompt, return_tensors="pt")
+        if args.cpu:
+            inputs = inputs.to("cpu")
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
@@ -86,17 +113,11 @@ def run_benchmark():
         else:
             return None
 
-    for item in eval_data:
-        pred = classify(item["prompt"])
-        total += 1
-        if pred is not None:
-            if pred == item["true_class"]:
-                correct += 1
-
-    accuracy = correct / total if total > 0 else 0
-    print(f"Model Accuracy: {accuracy:.2%} ({correct}/{total})")
-    return accuracy
-
+    for item in eval_dataset:
+        pred_direct = classify(prompt_direct.replace("{request}",item["request"]).replace("{response}",item["response"]))
+        pred_class = classify(prompt_class.replace("{request}",item["request"]).replace("{response}",item["response"]))
+        pred_class_pe = classify(prompt_class_pe.replace("{request}",item["request"]).replace("{response}",item["response"]))
+        store_result()
 
 # Start benchmark
 init_db()
