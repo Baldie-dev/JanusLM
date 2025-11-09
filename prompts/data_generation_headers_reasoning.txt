@@ -3,17 +3,7 @@
 Analyze following pair of request/response from cybersecurity perspective.
 Evaluate HTTP response headers for missing or misconfgired any security headers.
 
-Do not consider following missing or misconfigured headers as an issue:
-- X-Content-Type-Options
-- Permissions-Policy
-- X-Frame-Options
-- X-XSS-Protection
-- Referrer-Policy
-- Permissions-Policy
-- Cross-Origin-Resource-Policy
-- Cross-Origin-Embedder-Policy
-- Cross-Origin-Opener-Policy
-- Access-Control-Allow-Methods
+{HTTP_Header_Policies}
 
 If HTTP response has cache-control header that may cause proxies or browsers to cache responses, validate sensitivity of the data in the response. If HTTP response does not contain sensitive or private data do not mention cache-control header.
 If Access-Control-Allow are too permissive, highlight it as an issue.

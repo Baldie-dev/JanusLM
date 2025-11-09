@@ -2,12 +2,13 @@ import argparse, sqlite3, random, os, logging
 from dotenv import load_dotenv
 from openai import OpenAI
 import matplotlib.pyplot as plt
+from utils import Utils
 
 conn = sqlite3.connect('datasets/data.db')
 cursor = conn.cursor()
 total_in_tokens = 0
 total_out_tokens = 0
-
+documents = Utils.load_documents()
 load_dotenv()
 
 client = OpenAI(
@@ -82,6 +83,13 @@ def store_data(request, response, is_vulnerable, reasoning):
 
 def submit_prompt(prompt):
     global total_in_tokens, total_out_tokens
+    global documents
+
+    # Automatically inject documents
+    for filename, content in documents.items():
+        if filename in prompt:
+            prompt = prompt.replace("{"+filename+"}",content)
+
     logger.info("------LLM CALL-------")
     logger.info(f"prompt:\n{prompt}")
     completion = client.chat.completions.create(

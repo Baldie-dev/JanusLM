@@ -18,9 +18,6 @@ The primary goal is to explore the possibility of using a small, locally hosted,
 ### Proposal 1: Classification based on Decoder's hidden state
 ![JanusLM Architecture](imgs/architecture.png)
 
-### Proposal 2: Classification based on embedings
-![JanusLM Architecture](imgs/architecture2.png)
-
 ## Key Features
 
 - Compatible with any open-source model.

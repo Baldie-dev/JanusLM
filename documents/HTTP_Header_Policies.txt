@@ -1,0 +1,15 @@
+## HTTP Header Policies
+
+Following HTTP header policies must be followed or irelevant headers must be ignored to prevent raising false-positives.
+
+It is not mandatory to implement following HTTP headers as protection is already provided by CSP headers:
+- X-Content-Type-Options
+- Permissions-Policy
+- X-Frame-Options
+- X-XSS-Protection
+- Referrer-Policy
+- Permissions-Policy
+- Cross-Origin-Resource-Policy
+- Cross-Origin-Embedder-Policy
+- Cross-Origin-Opener-Policy
+- Access-Control-Allow-Methods
