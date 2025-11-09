@@ -11,17 +11,19 @@ Dual-head design provides a multi-purpose inference, where the pre-trained and f
 
 ## Goal
 
-The primary goal is to explore the possibility of using a small, locally hosted, tailored model that delivers performance comparable to the largest commercial models. The second goal focuses on generating synthetic, high-quality training data and evaluating various approaches to training, fine-tuning, base model selection, and classification methods
+The primary goal is to explore the possibility of using a small, locally hosted, tailored model that delivers performance comparable to the largest commercial models. The second goal focuses on generating synthetic, high-quality training data and evaluating various approaches to training, fine-tuning, base model selection, and classification methods.
+
+Separate LoRA adapters will be implemented to handle different categories of vulnerabilities.
 
 ## Architecture
 
-### Proposal 1: Classification based on Decoder's hidden state
+### Classification based on Decoder's hidden state
 ![JanusLM Architecture](imgs/architecture.png)
 
 ## Key Features
 
 - Compatible with any open-source model.
-- PEFT (LoRA) fine-tuned for analysis creation of request/response pairs.
+- PEFT (LoRA) for analysis creation of request/response pairs.
 - Supports swapping LoRA matrices to target different analysis types.
 - Test-type scaling implemented to control computation allocated to the problem.
 - Includes a fully trained classification head (Multi-Layer Perceptron) for false-positive evaluation.
@@ -29,9 +31,9 @@ The primary goal is to explore the possibility of using a small, locally hosted,
 
 # Training
 
-*Note: Training data has been omited from the repository.*
+*Note: Training data has been omited from the repository. However, proposed generator for training data creation is still present.*
 
-The training data was manually prepared by crafting pairs of insecure HTTP responses and their counterparts with that does not indicate any vulnerability. This approach should help model to understand the main differences between false and true positive.
+The training data was manually prepared by crafting pairs of insecure HTTP responses and their counterparts that are fully secure. This approach should help model to understand the main differences between false and true positive.
 
 Data has been prepared in SQLite databse in format:
 ```sql
@@ -47,11 +49,19 @@ CREATE TABLE IF NOT EXISTS training_data (
 
 ### Synthetic Data Generation
 
-High quality of manually crafted templates of realistic HTTP request/response pairs were passed through multiple agents that used larger models to generate synthetic training data. Each agent performed small mutations to the templates to expand overall dataset for training (from 20 templates to 1000 samples).
+High quality of manually crafted templates of realistic HTTP request/response pairs were passed through multiple agents that used larger models to generate synthetic training data. Each agent performed small mutations to the templates to expand overall dataset for training (from 50 templates to 1000 samples).
 
 ![synthentic-data-generation](imgs/synthetic-data-generation.png)
 
-Manual review was required to fine-tune the prompts for each agent.
+- **Content Agent**: Agent that mutates URL, user-agent, names and values of parameters. Additional mutation to the response header is also performed.
+- **QA Agent**: This agent verifies previuos mutations to make sure that request/response pair has realistic data, proper syntax and no misconfiguration or indication of vulnerability.
+- **Vuln Agent**: This agent introduces pre-defined vulnerability into the HTTP request/response pair. For example, if case of XSS it will add malicious payload to the request and its reflection in HTTP response.
+
+The prompt for each agent was iteratively improved during the first few iterations to ensure that the generated training data made sense and does not contain any inconsistencies.
+
+#### Templates
+
+Templates for HTTP request/response pairs were randomly collected and sanitized from multiple different web sites to ensure high variety of samples.
 
 For training data generation, please see `src/data_generator.py`:
 ```console
@@ -86,7 +96,7 @@ To generate one pair of high-quality training data, following number of tokens h
 - Input tokens: ~4000
 - Output tokens: ~10000
 
-Which means that it costs around 14M tokens to generate 1000 of training data samples.
+Which means that compute costs was around 14M tokens to generate 1000 of training data samples.
 
 Current token distribution in training data (*Larger dataset to be prepared*):
 
