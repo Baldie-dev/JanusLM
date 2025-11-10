@@ -11,7 +11,7 @@ This project proposes and evaluates a Dual-Head Large Language Model (LLM) archi
 
 By leveraging multiple tailored LoRA adapters, the model can efficiently adapt to perform security analysis tasks without changing the original base weights, keeping the reasoning power of the pretrained LLM minimally impacted while adding security domain specific intelligence.
 
-Reinforcement training via self-reflection is implemented after a first round fine-tunning. If model fails to correctly classify tasks on a first attempt, it is forced to perform second attempt. If second attempt succeced, reinforcment learning utilizing Group Relative Policy Optimization (GRPO) is used to reward tokens in second attempt. This can be also implemented during a run-time to gradually improve the model accuracy during normal usage.
+Reinforcement training via self-reflection is implemented after a first round fine-tunning. If model fails to correctly classify a task on a first attempt, it is forced to perform second attempt with additional groundtruth. If second attempt succeced, reinforcment learning via Group Relative Policy Optimization (GRPO) is used to reward tokens in second attempt. This approach can be also implemented during a run-time to gradually improve the model accuracy during a normal usage.
 
 Dual-head design provides a multi-purpose inference, where the pre-trained and fine-tuned generative head creates detailed analysis and the trained classification head consisting of dense neural network delivers classification prediction.
 
@@ -23,12 +23,12 @@ Dual-head design provides a multi-purpose inference, where the pre-trained and f
 ## Key Features
 
 - Compatible with any open-source model.
-- PEFT (LoRA) for analysis creation of request/response pairs.
+- PEFT (LoRA) for cyber-security analysis of request/response pairs.
 - Supports swapping LoRA matrices to target different analysis types.
-- Test-type scaling implemented to control computation allocated to the problem.
+- Test-type scaling implemented to control computation allocated to the analysis.
 - Self-reflection to improve in areas where model may be lacking.
 - Includes a fully trained classification head (Multi-Layer Perceptron) for false-positive evaluation.
-- Optimized for local deployment on the user's device.
+- Optimized for local deployment on the end user's device.
 
 # Training
 
