@@ -6,3 +6,5 @@ src/__pycache__/
 lora_adapter_direct_class/
 datasets/data.db
 benchmark_out/
+
+Qwen3-1.7B-lora/

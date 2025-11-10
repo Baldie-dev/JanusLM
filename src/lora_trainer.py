@@ -1,15 +1,16 @@
-from transformers import DataCollatorForLanguageModeling, TrainingArguments, Trainer, AutoModelForCausalLM
+from transformers import BitsAndBytesConfig, DataCollatorForLanguageModeling, TrainingArguments, Trainer, AutoModelForCausalLM
 from dotenv import load_dotenv
 import os, torch, logging, datasets, argparse
 from peft import LoraConfig, get_peft_model
 from torch.optim import AdamW 
 import matplotlib.pyplot as plt
 import numpy as np
-import scienceplots
+import scienceplots, json, csv
 from utils import Utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--cpu", action="store_true", required=False, help="Safe and slow training on CPU, for compatibility reasons")
+parser.add_argument("--threads", default=1, required=False, help="Number of threats for CPU")
 parser.add_argument("--output", default="lora-adapter", required=False, help="output folder for trained model")
 parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during training")
 parser.add_argument("--charts", action="store_true", required=False, help="If sets, training charts are generated.")
@@ -31,13 +32,20 @@ if args.verbose:
 logger = logging.getLogger(__name__)
 
 def StartLoRATraining():
+    device = "cpu" if args.cpu else ("cuda" if torch.cuda.is_available() else "cpu")
     tokenizer, train_dataset = Utils.load_training_dataset(model_path=model_path, vuln=args.vuln, is_cpu=args.cpu)
     logger.info("Loading base model...")
-    base_model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float32, device_map=None)
+    base_model = AutoModelForCausalLM.from_pretrained(model_path, device_map=device)
+    
     if args.cpu:
         base_model.to("cpu")
+        torch.set_num_threads(int(args.threads))
+        if int(args.threads) > 2:
+            torch.set_num_interop_threads(int(int(args.threads)/2))
         if hasattr(base_model.config, "use_cache"):
             base_model.config.use_cache = False
+    else:
+        base_model.to('cuda')
 
     lora_config = LoraConfig(
         r=8, 
@@ -54,6 +62,8 @@ def StartLoRATraining():
         # BugFix: checking if model also has caching disabled
         if hasattr(model.config, "use_cache"):
             model.config.use_cache = False
+    else:
+        model.to('cuda')
 
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False, pad_to_multiple_of=None)
 
@@ -62,14 +72,17 @@ def StartLoRATraining():
     example = train_dataset[0]
     batch = data_collator([example])
     # convert to tensors
-    if args.cpu:
-        batch_t = {k: (v.detach().clone().to("cpu") if isinstance(v, torch.Tensor) else torch.tensor(v, device="cpu")) for k, v in batch.items()}
-    else:
-        # To check if this works on GPU
-        batch_t = {k: (v.detach().clone() if isinstance(v, torch.Tensor) else torch.tensor(v)) for k, v in batch.items()}
+    #if args.cpu:
+    #    batch_t = {k: (v.detach().clone().to("cpu") if isinstance(v, torch.Tensor) else torch.tensor(v, device="cpu")) for k, v in batch.items()}
+    #else:
+    #    batch_t = {k: (v.detach().clone() if isinstance(v, torch.Tensor) else torch.tensor(v)) for k, v in batch.items()}
+    batch_t = {
+        k: (v.detach().clone().to(device) if isinstance(v, torch.Tensor) else torch.tensor(v, device=device))
+        for k, v in batch.items()
+    }
     model.train()
     optimizer = AdamW(model.parameters(), lr=2e-4)
-
+    
     try:
         outputs = model(**{k: v for k, v in batch_t.items() if k in ("input_ids", "attention_mask", "labels")})
         loss = outputs.loss if hasattr(outputs, "loss") else (outputs["loss"] if isinstance(outputs, dict) else None)
@@ -81,11 +94,11 @@ def StartLoRATraining():
             optimizer.zero_grad()
             logger.info("Manual forward/backward succeeded; loss: %s", float(loss.detach()))
     except Exception as e:
-        logger.exception("Manual forward/backward failed — this indicates model/PEFT issue: %s", e)
+        logger.exception("Manual forward/backward failed - this indicates model/PEFT issue: %s", e)
         raise
 
     # Prepare training parameter
-    max_trainning_steps = args.steps
+    max_trainning_steps = int(args.steps)
     if args.cpu:
         training_args = TrainingArguments(
             output_dir="./lora-out",
@@ -104,6 +117,8 @@ def StartLoRATraining():
         training_args = TrainingArguments(
             output_dir="./lora-out",
             max_steps=max_trainning_steps,
+            per_device_train_batch_size=1,
+            gradient_accumulation_steps = 8,
             learning_rate=2e-4,
             logging_steps=1,
             report_to=None,
@@ -124,6 +139,16 @@ def StartLoRATraining():
     log_history = trainer.state.log_history
     model.save_pretrained(args.output)
 
+    keys = set()
+    for entry in log_history:
+        keys.update(entry.keys())
+    keys = sorted(keys)
+    with open(args.output+"/log_history.csv", "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=keys)
+        writer.writeheader()
+        for entry in log_history:
+            writer.writerow(entry)
+
     # Save statistics from learning
     steps = [x["step"] for x in log_history if "loss" in x]
     losses = [x["loss"] for x in log_history if "loss" in x]
@@ -131,7 +156,7 @@ def StartLoRATraining():
     # Fir the trend line
     coeffs = np.polyfit(steps, losses, deg=1)
     trend_line = np.poly1d(coeffs)
-    plt.rcParams.update({'font.size': 14})
+    plt.rcParams.update({'font.size': 13})
     plt.style.use('science')
     plt.figure(figsize=(7, 4))
     plt.plot(steps, losses, marker="o")

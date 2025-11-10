@@ -62,11 +62,10 @@ class Utils:
     
     @staticmethod
     def load_training_dataset(model_path, vuln, is_cpu, logger=None):
+        device = "cpu" if is_cpu else ("cuda" if torch.cuda.is_available() else "cpu")
         if logger:
             logger.info("Initializing tokenizer and loading dataset...")
-        tokenizer = AutoTokenizer.from_pretrained(model_path, is_cpu)
-        if is_cpu:
-            torch.set_num_threads(1)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, device_map=device)
         dataset = Utils.load_data()
         tokenizer.pad_token = tokenizer.eos_token
         with open("prompts/"+Utils.get_vuln_output_prompt(vuln)+".txt", "r", encoding="utf-8") as f: prompt_input_tmp = f.read()
