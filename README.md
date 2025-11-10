@@ -303,4 +303,4 @@ python src/benchmark.py
 
 ## Notes to self
 
-- Can I fine-tune / train it purely on what I consider secure/insecure (true/false input) and let it figure it out what does it make secure/insecure?
+- Can I fine-tune / train it purely on what I consider secure/insecure (true/false input) and let it figure it out what does it make secure/insecure? 
