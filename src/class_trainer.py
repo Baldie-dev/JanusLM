@@ -12,7 +12,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--cpu", action="store_true", required=False, help="Safe and slow training on CPU, for compatibility reasons")
 parser.add_argument("--output", default="lora-adapter", required=False, help="output folder for trained model")
 parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during training")
-parser.add_argument("--charts", action="store_true", required=False, help="If sets, training charts are generated.")
 parser.add_argument("--steps", required=False, default=50, help="Number of training steps")
 args = parser.parse_args()
 

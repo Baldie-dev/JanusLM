@@ -1,11 +1,9 @@
-from transformers import BitsAndBytesConfig, DataCollatorForLanguageModeling, TrainingArguments, Trainer, AutoModelForCausalLM
+from transformers import DataCollatorForLanguageModeling, TrainingArguments, Trainer, AutoModelForCausalLM
 from dotenv import load_dotenv
 import os, torch, logging, datasets, argparse
 from peft import LoraConfig, get_peft_model
 from torch.optim import AdamW 
-import matplotlib.pyplot as plt
-import numpy as np
-import scienceplots, json, csv
+import csv
 from utils import Utils
 
 parser = argparse.ArgumentParser()
@@ -13,7 +11,6 @@ parser.add_argument("--cpu", action="store_true", required=False, help="Safe and
 parser.add_argument("--threads", default=1, required=False, help="Number of threats for CPU")
 parser.add_argument("--output", default="lora-adapter", required=False, help="output folder for trained model")
 parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during training")
-parser.add_argument("--charts", action="store_true", required=False, help="If sets, training charts are generated.")
 parser.add_argument("--steps", required=False, default=50, help="Number of training steps")
 parser.add_argument("--vuln", required=True, choices=Utils.get_vuln_choices(), help="Select category of vulnerability")
 args = parser.parse_args()
@@ -148,25 +145,5 @@ def StartLoRATraining():
         writer.writeheader()
         for entry in log_history:
             writer.writerow(entry)
-
-    # Save statistics from learning
-    steps = [x["step"] for x in log_history if "loss" in x]
-    losses = [x["loss"] for x in log_history if "loss" in x]
-    
-    # Fir the trend line
-    coeffs = np.polyfit(steps, losses, deg=1)
-    trend_line = np.poly1d(coeffs)
-    plt.rcParams.update({'font.size': 13})
-    plt.style.use('science')
-    plt.figure(figsize=(7, 4))
-    plt.plot(steps, losses, marker="o")
-    plt.plot(steps, trend_line(steps), color="red", linestyle="--", label="Trend Line")
-    plt.xlabel("Steps")
-    plt.ylabel("Training Loss")
-    plt.title("Training LoRA Adapter")
-    plt.grid(True)
-    if args.charts:
-        plt.savefig("imgs/fine-tuning-training-loss.png")
-    plt.show()
 
 StartLoRATraining()
