@@ -297,8 +297,9 @@ python src/benchmark.py
 - [1] Simple test-time scaling (https://arxiv.org/pdf/2501.19393)
 - [2] TinyLLM: A Framework for Training and Deploying Language Models at the Edge Computers (https://arxiv.org/abs/2412.15304)
 - [3] Tina: Tiny Reasoning Models via LoRA (https://arxiv.org/abs/2504.15777)
-- [4] Reflection paper...
-- [5] Group Relative Policy Optimization
+- [4] Reflect, Retry, Reward: Self-Improving LLMs via Reinforcement Learning (https://arxiv.org/abs/2505.24726)
+- [5] Group Relative Policy Optimization (https://arxiv.org/pdf/2402.03300)
+- [6] Reinforcement Learning Teachers of Test Time Scaling (https://arxiv.org/abs/2506.08388)
 
 ## Notes to self
 

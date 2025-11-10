@@ -2,10 +2,13 @@ import argparse, sqlite3, random, os, logging
 from dotenv import load_dotenv
 from openai import OpenAI
 from utils import Utils
+import pandas as pd
+import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", default="benchmark_out", required=False, help="Output folder for benchmark results")
 parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during benchmark")
+parser.add_argument("--vuln", required=True, choices=Utils.get_vuln_choices(), help="Select category of vulnerability")
 args = parser.parse_args()
 
 # Init global vars
@@ -39,7 +42,16 @@ def store_result(model, vuln_id, result):
     ''', (model, vuln_id, result))
     conn.commit()
 
+def get_not_benchmarked_tasks():
+    results = []
+    df = pd.read_sql_query("SELECT * FROM training_data LEFT JOIN ext_benchmark ON ext_benchmark.task_id == training_data.id", conn)
+    for i in range(len(df['id'])):
+        # check if result is NaN
+        print(type(df['result'][i]))
+
 def run_benchmark():
     pass
 
 init_db()
+
+get_not_benchmarked_tasks()
