@@ -109,5 +109,5 @@ def plot_epoch_loss_comparison(datas):
     plt.show()
 
 logs = find_logs()
-#plot_epoch_loss(extract_epoch_loss(logs[0]))
-plot_epoch_loss_comparison(logs)
+plot_epoch_loss(extract_epoch_loss(logs[0]))
+#plot_epoch_loss_comparison(logs)

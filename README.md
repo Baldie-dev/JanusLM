@@ -59,9 +59,9 @@ $$ h(x) = W_0x + ABx $$
 
 ### Self-Reflection
 
-*Note: TODO: diagram for self-refelction*
-
 Self-reflection, also refered as introspection serves during a training process to improve a reasoning / analysis capabilities of the model. When model fails to correctly classify the task, it is forced to evaluate its own analysis / reasoning to identify issues and to perform second classification attempt.
+
+![elf-Reflection](imgs/reinforcment-learning.png)
 
 If model correctly performs self-reflection and correctly classify the task, the introspection is used as a reward during Reinforcment Training.
 
