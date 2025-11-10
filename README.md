@@ -20,6 +20,9 @@ Dual-head design provides a multi-purpose inference, where the pre-trained and f
 ### Classification based on Decoder's hidden state
 ![JanusLM Architecture](imgs/architecture.png)
 
+### Implementation Plan
+![Training Plan](imgs/training-plan.png)
+
 ## Key Features
 
 - Compatible with any open-source model.
