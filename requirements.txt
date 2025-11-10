@@ -2,3 +2,7 @@ python-dotenv
 accelerate
 peft
 SciencePlots
+transformers
+tf-keras
+datasets
+bitsandbytes
