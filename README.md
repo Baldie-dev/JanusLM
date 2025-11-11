@@ -138,7 +138,9 @@ Evolution of the loss function during fine-tuning of a LoRA adapter for creation
 Comparison of loss function between different base models:
 ![FineTuning-Training-Loss-Comparison](imgs/fine-tuning-training-loss-comparison.png)
 
-### 2. Phase: Self-Reflection
+### 2. Phase: GRPO (Self-Reflection)
+
+GRPO is a reinforcement learning algorithm that does not leverage a critic model (like traditional PPO), but instead relies on direct preference comparisons between multiple generated outputs to compute relative advantages and guide learning.
 
 Self-Reflection via Reinforcment Learning (GRPO) was performed on Failure Dataset in following steps:
 
@@ -152,11 +154,8 @@ Self-Reflection via Reinforcment Learning (GRPO) was performed on Failure Datase
 
 Failure dataset was collected during training and evaluation and it consist of incorrectly classified tasks.
 
-#### GRPO (Group Relative Policy Optimization)
-
-GRPO is a reinforcement learning algorithm that does not leverage a critic model (like traditional PPO), but instead relies on direct preference comparisons between multiple generated outputs to compute relative advantages and guide learning.
-
 ### 3. Phase: Classification Head Training
+
 *Still in design process...*
 
 Full MLP (Multi-layered perceptron) training for data classification performed on the output of the last hidden state. (probably mean of all outputs)

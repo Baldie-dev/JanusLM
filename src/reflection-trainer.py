@@ -21,7 +21,31 @@ batch_size = 1
 
 janus = JanusClassification(model_path, lora_adapter, is_cpu=True)
 tasks = Utils.load_data()
-print(janus.complete("hi!"))
+documents = Utils.load_documents()
+prompt_class_pe = Utils.load_prompt("task_self_class_pe.txt", documents)
+prompt_class_pe_class = Utils.load_prompt("task_self_class_pe_class.txt", documents)
+
+# 1 Create initial task
+task = tasks[0]
+is_vuln = task["is_vulnerable"]
+prompt = prompt_class_pe.replace("{request}",task["request"]).replace("{response}",task["response"])
+
+# 2 Create a reasoning
+analysis = janus.complete(prompt.replace("{analysis}",""))
+print(analysis)
+analysis = analysis.split("### Analysis")[1].strip()
+
+# 3 Perform Assesment
+prompt2 = prompt_class_pe_class.replace("{request}",task["request"]).replace("{response}",task["response"])
+assesment = janus.complete(prompt2.replace("{analysis}", analysis), 2)
+assesment = assesment.split("### Result: ")[1].strip()
+print(assesment)
+
+# 4 Evaluate Assesment
+print("-----")
+print(f"{is_vuln} == {assesment}")
+
+
 exit(1)
 
 # Step 1, prepare the group for training
