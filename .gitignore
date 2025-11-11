@@ -8,3 +8,4 @@ datasets/data.db
 benchmark_out/
 
 Qwen3-1.7B-lora/
+Qwen3-4B-lora/

@@ -133,6 +133,11 @@ LoRA fine-tuning was applied to enhance analytical reasoning over request/respon
 Evolution of the loss function during fine-tuning of a LoRA adapter for creation of analysis for HTTP responses, showing that model is improving ability to perform reasoning.
 ![FineTuning-Training-Loss](imgs/fine-tuning-training-loss.png)
 
+*Note: Investigate the spikes in the loss function. Maybe caused by bad training sample*
+
+Comparison of loss function between different base models:
+![FineTuning-Training-Loss-Comparison](imgs/fine-tuning-training-loss-comparison.png)
+
 ### 2. Phase: Self-Reflection
 
 Self-Reflection via Reinforcment Learning (GRPO) was performed on Failure Dataset in following steps:
