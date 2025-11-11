@@ -91,13 +91,15 @@ def plot_epoch_loss(data, title="Epoch vs Loss"):
 def plot_epoch_loss_comparison(datas):
     mpl.style.use("science")
     plt.figure(figsize=(8, 5))
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     for idx, csv_path in enumerate(logs):
         data = extract_epoch_loss(csv_path)
         name = os.path.dirname(csv_path)
         epochs = data["epoch"]
         losses = data["loss"]
+        color = colors[idx % len(colors)]
         smoothed = lowess(losses, epochs, frac=0.2)
-        plt.plot(smoothed[:, 0], smoothed[:, 1], 'r--', linewidth=1.5, label=name)
+        plt.plot(smoothed[:, 0], smoothed[:, 1], linestyle='--',color=color, linewidth=1.5, label=name)
     plt.xlabel("Epoch", fontsize=14)
     plt.ylabel("Loss", fontsize=14)
     plt.xticks(fontsize=12)
@@ -109,5 +111,5 @@ def plot_epoch_loss_comparison(datas):
     plt.show()
 
 logs = find_logs()
-plot_epoch_loss(extract_epoch_loss(logs[0]))
-#plot_epoch_loss_comparison(logs)
+#plot_epoch_loss(extract_epoch_loss(logs[0]))
+plot_epoch_loss_comparison(logs)
