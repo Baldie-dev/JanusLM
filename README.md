@@ -135,13 +135,23 @@ Evolution of the loss function during fine-tuning of a LoRA adapter for creation
 
 ### 2. Phase: Self-Reflection
 
-*Note: To add implementation*
+Self-Reflection via Reinforcment Learning (GRPO) was performed on Failure Dataset in following steps:
+
+1. Create initial task ($P^1$).
+2. Generate series of analysis that initially results in incorrect classification.
+3. Generate series of self-reflections for each analysis ($S_1, S_2, ... S_n$) on why classification failed.
+4. Create refined input for task retry $P^2_i=P^1+S_i$
+5. If model succeeds, reward tokens ($S_i$) with GRPO.
 
 #### Failure Dataset
 
 Failure dataset was collected during training and evaluation and it consist of incorrectly classified tasks.
 
-### 3. Phase:
+#### GRPO (Group Relative Policy Optimization)
+
+GRPO is a reinforcement learning algorithm that does not leverage a critic model (like traditional PPO), but instead relies on direct preference comparisons between multiple generated outputs to compute relative advantages and guide learning.
+
+### 3. Phase: Classification Head Training
 *Still in design process...*
 
 Full MLP (Multi-layered perceptron) training for data classification performed on the output of the last hidden state. (probably mean of all outputs)

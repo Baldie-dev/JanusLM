@@ -6,3 +6,5 @@ transformers
 tf-keras
 datasets
 bitsandbytes
+torchrl[utils]
+trl
