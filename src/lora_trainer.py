@@ -8,6 +8,7 @@ from utils import Utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--cpu", action="store_true", required=False, help="Safe and slow training on CPU, for compatibility reasons")
+parser.add_argument("--model", default="E:\models\Qwen3-4B", required=True, help="Path to the base model folder.")
 parser.add_argument("--threads", default=1, required=False, help="Number of threats for CPU")
 parser.add_argument("--output", default="lora-adapter", required=False, help="output folder for trained model")
 parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during training")
@@ -22,7 +23,7 @@ if args.cpu:
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 load_dotenv()
-model_path = os.getenv("MODEL_PATH")
+model_path = args.model
 
 if args.verbose:
     logging.basicConfig(level=logging.INFO)
