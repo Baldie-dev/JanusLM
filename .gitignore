@@ -9,3 +9,5 @@ benchmark_out/
 
 Qwen3-1.7B-lora/
 Qwen3-4B-lora/
+DeepSeek-R1-Distrill-Qwen-1.5B-lora/
+DeepSeek-R1-Distrill-Qwen-7B-lora/
