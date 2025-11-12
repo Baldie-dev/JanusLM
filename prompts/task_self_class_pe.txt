@@ -1,0 +1,18 @@
+Analyze following pair of request/response from cybersecurity perspective.
+Evaluate HTTP response headers for missing or misconfgired any security headers.
+
+Analyze following pair request/response and provide an analysis.
+
+{HTTP_Header_Policies}
+
+<request>
+{request}
+</request>
+
+<response>
+{response}
+</response>
+
+### Analysis
+
+{analysis}

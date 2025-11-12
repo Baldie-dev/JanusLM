@@ -1,16 +1,11 @@
 Analyze following pair of request/response from cybersecurity perspective.
 Evaluate HTTP response headers for missing or misconfgired any security headers.
 
-{Expected_Output}
+Answer with only single digit 1 or 0 when:
+1 - HTTP response contains misconfigured headers and requires attention.
+0 - HTTP response is properly configured.
 
 {HTTP_Header_Policies}
-
-output example:
-### Analysis
-
-<your analysis>
-
-### Result: 0
 
 <request>
 {request}
@@ -20,7 +15,8 @@ output example:
 {response}
 </response>
 
-output:
 ### Analysis
 
 {analysis}
+
+### Result: 
