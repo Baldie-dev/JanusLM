@@ -1,0 +1,28 @@
+Analyze following pair of request/response from cybersecurity perspective.
+Evaluate HTTP response headers for missing or misconfgired any security headers.
+
+Analyze following pair request/response, create a {analysis} and then provide your {answer}.
+
+Answer is only single digit 1 or 0 when:
+1 - HTTP response contains misconfigured headers and requires attention.
+0 - HTTP response is properly configured.
+
+{HTTP_Header_Policies}
+
+<request>
+{request}
+</request>
+
+<response>
+{response}
+</response>
+
+Output format:
+
+### Analysis
+
+{analysis}
+
+### Result: {result}
+
+Analysis should contain maximum of {word_count} words.

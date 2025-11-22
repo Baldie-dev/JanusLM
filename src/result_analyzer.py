@@ -7,33 +7,42 @@ from utils import Utils
 mpl.rcParams['text.usetex'] = False
 plt.rc('text', usetex=False)
 
-def load_data():
+def get_benchmark_accuracy():
     conn = sqlite3.connect('datasets/data.db')
-    results = []
-    df = pd.read_sql_query("SELECT * FROM ext_benchmark LEFT JOIN training_data ON ext_benchmark.task_id == training_data.id;", conn)
-    df2 = pd.read_sql_query("SELECT * FROM int_benchmark LEFT JOIN training_data ON int_benchmark.task_id == training_data.id;", conn)
-    for i in range(len(df['id'])):
-        results.append({
-            'model': df['model'][i],
-            'is_vulnerable': bool(df['is_vulnerable'][i]),
-            'result': bool(df['result'][i]),
-            'vuln_category': int(df['vuln_category'][i])
-        })
-    for i in range(len(df2['id'])):
-        results.append({
-            'model': df2['model'][i],
-            'is_vulnerable': bool(df2['is_vulnerable'][i]),
-            'result': bool(df2['result'][i]),
-            'vuln_category': int(df['vuln_category'][i])
-        })
-    return results
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 
+            b.id AS benchmark_id,
+            b.label,
+            COUNT(r.id) AS total_tasks,
+            SUM(CASE WHEN r.result = t.is_vulnerable THEN 1 ELSE 0 END) AS correct_matches,
+            SUM(CASE WHEN r.result != t.is_vulnerable THEN 1 ELSE 0 END) AS incorrect_matches,
+            ROUND(
+                (SUM(CASE WHEN r.result = t.is_vulnerable THEN 1 ELSE 0 END) * 100.0) / 
+                COUNT(r.id), 2
+            ) AS accuracy_rate
+        FROM benchmarks b
+        LEFT JOIN benchmark_results r 
+            ON b.id = r.benchmark_id
+        LEFT JOIN training_data t
+            ON r.task_id = t.id
+        GROUP BY b.id, b.label
+        ORDER BY b.id
+    """)
+    
+    stats = cursor.fetchall()
+    return [
+        {
+            "benchmark_id": row[0],
+            "label": row[1],
+            "total_tasks": row[2],
+            "correct_matches": row[3],
+            "incorrect_matches": row[4],
+            "accuracy_rate": row[5]
+        }
+        for row in stats
+    ]
 
-def get_unique_models(data):
-    models = []
-    for result in data:
-        if result['model'] not in models:
-            models.append(result['model'])
-    return models
 
 def get_model_stats(data, model):
     TP = FP = TN = FN = 0
@@ -70,17 +79,41 @@ def plot_chart(categories, values, yaxis, title, filename):
     plt.savefig(output_path)
     plt.close()
 
-data = load_data()
-models = get_unique_models(data)
-accuracies = []
-precisions = []
-for model in models:
-    stats = get_model_stats(data, model)
-    precisions.append(stats[0])
-    accuracies.append(stats[1])
+def plot_lines(lines, xaxis, yaxis, title, filename):
+    mpl.style.use("science")
+    plt.figure(figsize=(8, 5))
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    i = 0
+    for line in lines:
+        color = colors[i % len(colors)]
+        i += 1
+        plt.plot(line["x"], line["y"], linestyle='--',color=color, linewidth=0.8, marker='x', markersize=12, label=line["label"])
+    plt.xlabel(xaxis, fontsize=14)
+    plt.ylabel(yaxis, fontsize=14)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.title(title, fontsize=15)
+    plt.legend(fontsize=14)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+    output_path = 'imgs/'+filename+'-benchmark.png'
+    plt.savefig(output_path)
 
-# Plot Precision
-plot_chart(models, precisions, "Precision (\%)", "Precision by model", "precision")
+def plot_benchmark_accuracy(stats):
+    lines = []
+    models = ["Qwen3-1.7B-lora", "Qwen3-4B-lora"]
+    for model in models:
+        x = []
+        y = []
+        for stat in stats:
+            if model in stat['label']:
+                length = int(stat['label'].split('-')[-1])
+                x.append(length)
+                y.append(stat['accuracy_rate'])
+        lines.append({"label": model, "x": x, "y": y})
+    plot_lines(lines, "Analysis Length", "Accuracy Rate (\%)", "Accuracy Rate by Analysis Length", "accuracy-lora-by-length")
 
-# Plot Accuracy
-plot_chart(models, accuracies, "Accuracy (\%)", "Accuracy by model", "accuracy")
+
+stats = get_benchmark_accuracy()
+plot_benchmark_accuracy(stats)
