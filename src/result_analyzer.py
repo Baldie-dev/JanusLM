@@ -96,19 +96,18 @@ def plot_lines(lines, xaxis, yaxis, title, filename):
     plt.legend(fontsize=14)
     plt.grid(True)
     plt.tight_layout()
-    plt.show()
     output_path = 'imgs/'+filename+'-benchmark.png'
     plt.savefig(output_path)
 
 def plot_benchmark_accuracy(stats):
     lines = []
-    models = ["Qwen3-1.7B-lora", "Qwen3-4B-lora"]
+    models = ["Qwen3-1.7B-lora", "Qwen3-4B-lora", "gpt-5-mini"]
     for model in models:
         x = []
         y = []
         for stat in stats:
             if model in stat['label']:
-                length = int(stat['label'].split('-')[-1])
+                length = int(stat['label'].split('-')[-1].replace('w',''))
                 x.append(length)
                 y.append(stat['accuracy_rate'])
         lines.append({"label": model, "x": x, "y": y})

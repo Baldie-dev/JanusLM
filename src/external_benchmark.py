@@ -101,9 +101,7 @@ def run_benchmark(benchmark_id: int, label_ids: list[int]):
         prompt = prompt_class.replace("{request}",task["request"]).replace("{response}",task["response"])
         response = int(get_response(client, prompt))
         print(f"expected: {is_vuln}; got: {response}")
-        #store_result(benchmark_id, task["id"], response)
-        exit(0)
-
+        store_result(benchmark_id, task["id"], response)
 
 init_db()
 
