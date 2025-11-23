@@ -39,6 +39,7 @@ class JanusClassification():
         self.is_cpu = is_cpu
         self.model = AutoModelForCausalLM.from_pretrained(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        print(f"Tokenize Template: {self.tokenizer.chat_template}")
         if lora_adapter:
             self.model = PeftModel.from_pretrained(self.model, lora_adapter)
         self.model.eval()
@@ -60,5 +61,30 @@ class JanusClassification():
                 pad_token_id=self.tokenizer.eos_token_id,
                 temperature=temperature,
             )
-        response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        response = self.tokenizer.decode(outputs[0], skip_special_tokens=False)
+        return response
+    
+    def complete_template(self, system, prompt, max_tokens=100):
+        if self.tokenizer.chat_template == None:
+            prompt = system+"\nUser:"+prompt+"\nAssistant:"
+            inputs = self.tokenizer(prompt, return_tensors="pt")
+        else:
+            messages = [
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt}
+            ]
+            inputs = self.tokenizer.apply_chat_template(
+                messages,
+                return_tensors="pt"
+            )
+        if self.is_cpu:
+            inputs = inputs.to("cpu")
+        with torch.no_grad():
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=max_tokens,
+                eos_token_id=self.tokenizer.eos_token_id or self.tokenizer.convert_tokens_to_ids("<eos>"),
+                pad_token_id=self.tokenizer.eos_token_id or self.tokenizer.pad_token_id,
+            )
+        response = self.tokenizer.decode(outputs[0], skip_special_tokens=False)
         return response
