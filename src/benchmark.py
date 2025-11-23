@@ -1,7 +1,7 @@
 import json, torch, argparse, logging, sqlite3
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from dotenv import load_dotenv
-import os
+import os, time
 from peft import PeftModel
 from utils import Utils
 from JanusLModel import JanusClassification
@@ -70,20 +70,32 @@ def get_task_ids_by_benchmark_id(benchmark_id: int) -> list[int]:
     rows = cursor.fetchall()
     return [row[0] for row in rows]
 
+def format_eta(seconds: float) -> str:
+    if seconds < 60:
+        return f"{seconds:.2f}s"
+    elif seconds < 3600:
+        minutes = seconds / 60
+        return f"{minutes:.2f}m"
+    else:
+        hours = seconds / 3600
+        return f"{hours:.2f}h"
+
 def run_benchmark(benchmark_id: int, label_ids: list[int]):
     global documents
     logger.info("Loading models and prompts...")
     eval_dataset = Utils.load_data()
-    FP = FN = TP = TN = 0
-
     janus = JanusClassification(args.model_path, args.lora_adapter, is_cpu=True)
     documents = Utils.load_documents()
     prompt_class_pe = Utils.load_prompt("task_self_class_pe.txt", documents)
     prompt_class_pe_class = Utils.load_prompt("task_self_class_pe_class.txt", documents)
 
-    for task in eval_dataset:
-        if (task["id"] in label_ids):
-            continue
+    tasks_to_run = [task for task in eval_dataset if task["id"] not in label_ids]
+    total = len(tasks_to_run)
+    logger.info(f"Total tasks to run: {total}")
+    start_time = time.time()
+
+    for idx, task in enumerate(tasks_to_run, start=1):
+        iter_start = time.time()
         # 1 Create initial task
         is_vuln = int(task["is_vulnerable"])
         prompt = prompt_class_pe.replace("{request}",task["request"]).replace("{response}",task["response"])
@@ -100,12 +112,23 @@ def run_benchmark(benchmark_id: int, label_ids: list[int]):
         try:
             assesment = int(assesment.split("### Result: ")[1].strip())
         except:
-            if is_vuln:
-                FN += 1
-            else:
-                FP += 1
             continue
-        logger.info(f"expected: {is_vuln}; got: {assesment}")
+
+        # Timing stats
+        iter_end = time.time()
+        iter_duration = iter_end - iter_start
+        elapsed = iter_end - start_time
+        avg_time = elapsed / idx
+        remaining = total - idx
+        eta = remaining * avg_time
+        eta_str = format_eta(eta)
+
+        logger.info(
+            f"[{idx}/{total}] expected: {is_vuln}; got: {assesment} | "
+            f"pass_time={iter_duration:.2f}s | avg={avg_time:.2f}s | "
+            f"elapsed={elapsed:.2f}s | remaining={remaining} | ETA={eta_str}"
+        )
+
         store_result(benchmark_id, task["id"], assesment)
 
 # Start benchmark

@@ -206,4 +206,4 @@ def print_benchmark_stats(stats):
 stats = get_benchmark_accuracy()
 print_benchmark_stats(stats)
 plot_benchmark_accuracy(stats)
-#plot_benchmark_lora_improvment(stats)
+plot_benchmark_lora_improvment(stats)
