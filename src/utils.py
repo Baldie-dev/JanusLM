@@ -72,8 +72,8 @@ class Utils:
             out = tokenizer(
                 full_text,
                 truncation=True,
-                padding="max_length",
-                max_length=tokenizer.model_max_length,
+                padding=False,
+                max_length=None,
             )
             input_ids      = out["input_ids"]
             attention_mask = out["attention_mask"]

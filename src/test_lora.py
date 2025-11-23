@@ -11,6 +11,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 model_path = "C:/Users/micha/Downloads/ollama-3.1-1B"
+model_path = "E:/models/Qwen3-4B"
 lora_adapter = "lora_adapter_direct_class"
 device = "cpu"
 batch_size = 1
@@ -73,4 +74,4 @@ print("Starting Training...")
 trainer.train()
 print("Training completed!")
 log_history = trainer.state.log_history
-model.save_pretrained("test-lore")
+model.save_pretrained("test-lora2")
