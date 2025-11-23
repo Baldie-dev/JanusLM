@@ -1,6 +1,7 @@
 import os, sqlite3, torch, logging
 from transformers import AutoTokenizer
 import pandas as pd
+from datasets import Dataset
 
 class Utils:
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'] 
@@ -61,6 +62,36 @@ class Utils:
         from datasets import Dataset
         dataset = Dataset.from_pandas(df)
         return dataset
+    
+    @staticmethod
+    def tokenize_datasets_lora(tokenizer, prompts, answers):
+        data = []
+        tokenizer.pad_token = tokenizer.eos_token
+        for p, a in zip(prompts, answers):
+            full_text = p + "\n" + a
+            out = tokenizer(
+                full_text,
+                truncation=True,
+                padding="max_length",
+                max_length=tokenizer.model_max_length,
+            )
+            input_ids      = out["input_ids"]
+            attention_mask = out["attention_mask"]
+            labels = input_ids.copy()
+            prompt_ids = tokenizer(
+                p + "\n",
+                truncation=True,
+                padding=False
+            )["input_ids"]
+            prompt_length = len(prompt_ids)
+            labels[:prompt_length] = [-100] * prompt_length
+            data.append({
+                "input_ids": input_ids,
+                "attention_mask": attention_mask,
+                "labels": labels,
+            })
+
+        return Dataset.from_list(data)
     
     @staticmethod
     def load_training_dataset(model_path, vuln, is_cpu, logger=None):

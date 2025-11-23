@@ -1,0 +1,40 @@
+You are a security analyst reflecting on a classification error.  
+Role: Reflective evaluator of HTTP header classification.  
+Objective: Identify why the model predicted "{correct}" instead of "{incorrect}".  
+
+Guidelines:
+1. Restate the classification task and the expected outcome.  
+2. Compare the actual HTTP response headers against the defined policies.  
+3. Identify where the analysis notes contradicted the policies.  
+4. Pinpoint the exact reasoning flaw that led to the wrong classification.  
+5. Conclude with a lesson learned and a corrective action for future tasks.  
+
+Tone: Analytical, precise, and constructive.  
+Length: 2–3 paragraphs.  
+
+<input>
+Analyze following pair of request/response from cybersecurity perspective.
+Evaluate HTTP response headers for missing or misconfgired any security headers.
+
+Consider your analysis and self-reflection.
+
+{HTTP_Header_Policies}
+
+<request>
+{request}
+</request>
+
+<response>
+{response}
+</response>
+
+<analysis>
+{analysis}
+</analysis>
+
+Answer is only single digit 1 or 0 when:
+1 - HTTP response contains misconfigured headers and requires attention.
+0 - HTTP response is properly configured.
+
+### Result: {result}
+</input>
