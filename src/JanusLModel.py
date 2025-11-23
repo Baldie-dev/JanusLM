@@ -48,7 +48,7 @@ class JanusClassification():
             self.tokenizer.pad_token = self.tokenizer.eos_token
         self.model.config.pad_token_id = self.tokenizer.eos_token_id
 
-    def complete(self, prompt, max_tokens=100):
+    def complete(self, prompt, max_tokens=100, temperature=1):
         inputs = self.tokenizer(prompt, return_tensors="pt")
         if self.is_cpu:
             inputs = inputs.to("cpu")
@@ -57,7 +57,8 @@ class JanusClassification():
                 **inputs,
                 max_new_tokens=max_tokens,
                 eos_token_id=self.tokenizer.eos_token_id,
-                pad_token_id=self.tokenizer.eos_token_id
+                pad_token_id=self.tokenizer.eos_token_id,
+                temperature=temperature,
             )
         response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
         return response
