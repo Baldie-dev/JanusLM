@@ -139,10 +139,20 @@ Comparison of loss function between different base models:
 ![FineTuning-Training-Loss-Comparison](imgs/fine-tuning-training-loss-comparison.png)
 
 Comparison of accuracy after LoRA fine-tuning:
-![FineTuning-Accuracy-Comparison]()
+![FineTuning-Accuracy-Comparison](imgs/lora-accuracy-improvment-benchmark.png)
+
+Comparison of false-positive rate after LoRA fine-tuning:
+![FineTuning-False-Positive-Comparison](imgs/lora-false-positive-improvment-benchmark.png)
+
+Key observations:
+- Acurracy slightly decreases after LoRA fine-tuning, however false-positive rate drops to 0.
+- Long reasoning length can cause hallucination and impact the false-positive rate.
 
 Comparison of accuracy based on analysis length:
 ![FineTuning-Accuracy-Reasoning-Length](imgs/accuracy-lora-by-length-benchmark.png)
+
+Comparison of false-positive rate based on analysis length:
+![FineTuning-False-Positive-Reasoning-Length](imgs/false-positive-lora-by-length-benchmark.png)
 
 ### 2. Phase: GRPO (Self-Reflection)
 

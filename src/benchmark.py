@@ -105,7 +105,7 @@ def run_benchmark(benchmark_id: int, label_ids: list[int]):
             else:
                 FP += 1
             continue
-        print(f"expected: {is_vuln}; got: {assesment}")
+        logger.info(f"expected: {is_vuln}; got: {assesment}")
         store_result(benchmark_id, task["id"], assesment)
 
 # Start benchmark
