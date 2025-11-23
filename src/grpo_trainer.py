@@ -19,7 +19,7 @@ parser.add_argument("--verbose", action="store_true", required=False, help="Verb
 args = parser.parse_args()
 
 model_path = "C:/Users/micha/Downloads/ollama-3.1-1B"
-lora_adapter = "lora_adapter_direct_class"
+lora_adapter = "test-lora2"
 device = "cpu"
 batch_size = 1
 
@@ -40,11 +40,12 @@ prompt_grpo_reward = Utils.load_prompt("grpo_reward_function.txt", documents)
 
 # --- LOOP START HERE ---
 
-prompt = "Hi, how are you?"
+system = "You are an assistant who generates 1 paragraph long analysis from cyber security perspective of following reflected parameter."
+prompt = '''<p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>'''
 
 # Measure janus.complete
 start = time.perf_counter()
-resp_complete = janus.complete_template("You are an assistant and you are replying only with single word.", prompt)
+resp_complete = janus.complete_template(system, prompt, max_tokens=200)
 end = time.perf_counter()
 print(f"janus.complete took {end - start:.6f} seconds")
 print("Response (complete):", resp_complete)

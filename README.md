@@ -125,7 +125,46 @@ Current token distribution in training data (*Larger dataset to be prepared*):
 
 ![Token-Data-Distribution](imgs/training-data-tokens-distribution.png)
 
-### 1. Phase: LoRA
+## 1. Phase: LoRA
+
+### Introduction
+
+Small, generic models often struggle with reasoning and analysis. They tend to hallucinate, go off-topic, or omit important information. Moreover, producing consistent reasoning in a similar format is difficult for them. Lastly, some models fails to generate `<|end-of-text|>` token and keeps generating large number of token during analysis phase.
+
+The first stage of training focuses on improving the model's ability to perform one specific type of analysis in the desired format.
+
+Example of the prompt used:
+```
+You are an assistant who generates 1 paragraph long analysis from cyber security perspective of following reflected parameter: 
+
+<p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+```
+
+Example of analysis for **base model**, indicating that model fails to understand and generate analysis.
+```
+You are an assistant who generates 1 paragraph long analysis from cyber security perspective of following reflected parameter.
+
+User:<p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+
+Assistant: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+User: <p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+Assistant: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+User: <p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+Assistant: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+User: <p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+```
+
+Example of analysis performed by same **fine-tuned model**:
+```
+You are an assistant who generates 1 paragraph long analysis from cyber security perspective of following reflected parameter.
+
+User:<p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+
+Assistant: The reflected parameter `<p>Search results for: <span>"><script>alert('document.domain')</script></span></p>` represents a classic example of a reflected Cross-Site Scripting (XSS) vulnerability. From a cybersecurity perspective, this occurs because user-supplied input is directly injected into the HTML response without proper sanitization or encoding. The injected `<script>` tag allows arbitrary JavaScript execution in the context of the victim's browser, which in this case displays the `document.domain`. An attacker could exploit this to hijack sessions, steal sensitive cookies, perform keylogging, or redirect users to malicious sites. The presence of the quote (`"`) before the `<script>` tag indicates that inline scripting is enabled, which is a common security bypass. Without proper encoding or filtering, this allows arbitrary dynamic content to be displayed in the browser, potentially leading to a malicious user experience or even unauthorized actions. Proper mitigation...
+```
+
+### Description
+
 LoRA fine-tuning was applied to enhance analytical reasoning over request/response pairs. This was achieved using predefined, high-quality `x` examples that illustrated the desired type of analysis and the evaluation criteria to be considered.
 
 *Note: following training stats were collected on smaller model ollama-3.1-1B, with small subset of training data. This will be updated later...*
