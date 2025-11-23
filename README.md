@@ -225,6 +225,14 @@ Following step-by-step process was implemented:
 
 Evaluation was performed using a cross-validation technique (80/20) by splitting the training data into two folds, where one was used for training and the other for validation.
 
+## Clasification Techniques
+
+Since LLMs are not deterministic, there is always a non‑zero chance that an analysis will be incorrect or that a classification will fail.
+
+## Temperature Influence
+
+*Note: To add section about temperature influence on analysis*
+
 ### Metrics
 Definition of terms:
 - $TP$ - True Positive, correctly marked finding.
