@@ -50,6 +50,47 @@ def get_benchmark_accuracy():
         for row in stats
     ]
 
+def get_benchmark2_accuracy():
+    conn = sqlite3.connect('datasets/data.db')
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 
+            b.id AS benchmark_t_id,
+            b.label,
+            COUNT(r.id) AS total_tasks,
+            SUM(CASE WHEN r.result = t.is_vulnerable THEN 1 ELSE 0 END) AS correct_matches,
+            SUM(CASE WHEN r.result != t.is_vulnerable THEN 1 ELSE 0 END) AS incorrect_matches,
+            SUM(CASE WHEN t.is_vulnerable = 0 AND r.result = 1 THEN 1 ELSE 0 END) AS false_positives,
+            ROUND(
+                (SUM(CASE WHEN r.result = t.is_vulnerable THEN 1 ELSE 0 END) * 100.0) / 
+                COUNT(r.id), 2
+            ) AS accuracy_rate,
+            ROUND(
+                (SUM(CASE WHEN t.is_vulnerable = 0 AND r.result = 1 THEN 1 ELSE 0 END) * 100.0) / 
+                COUNT(r.id), 2
+            ) AS false_positive_rate
+        FROM benchmarks_t b
+        LEFT JOIN benchmark_t_results r 
+            ON b.id = r.benchmark_id
+        LEFT JOIN training_data t
+            ON r.task_id = t.id
+        GROUP BY b.id, b.label
+        ORDER BY b.id
+    """)
+    
+    stats = cursor.fetchall()
+    return [
+        {
+            "benchmark_id": row[0],
+            "label": row[1],
+            "total_tasks": row[2],
+            "correct_matches": row[3],
+            "incorrect_matches": row[4],
+            "accuracy_rate": row[6],
+            "false_positive_rate": row[7]
+        }
+        for row in stats
+    ]
 
 def get_model_stats(data, model):
     TP = FP = TN = FN = 0
@@ -204,6 +245,8 @@ def print_benchmark_stats(stats):
         print(f"{stat['label']:<25} {stat['total_tasks']:<15} {stat['correct_matches']:<10} {stat['incorrect_matches']:<12} {stat['accuracy_rate']:<15} {stat['false_positive_rate']:<15}")
 
 stats = get_benchmark_accuracy()
-print_benchmark_stats(stats)
-plot_benchmark_accuracy(stats)
-plot_benchmark_lora_improvment(stats)
+stats2 = get_benchmark2_accuracy()
+print(stats2)
+# print_benchmark_stats(stats)
+# plot_benchmark_accuracy(stats)
+# plot_benchmark_lora_improvment(stats)

@@ -18,7 +18,7 @@ parser.add_argument("--label", required=True, help="Label for benchmark")
 parser.add_argument("--rtemperature", required=True, help="Temperature for reasoning")
 parser.add_argument("--ctemperature", required=True, help="Temperature for classification")
 parser.add_argument("--iterations", required=False, help="Number of iterations per task, default 1", default=1)
-parser.add_argument("--task-id", required=False, help="task id", default=1)
+parser.add_argument("--task-id", required=False, help="task id", default=0)
 args = parser.parse_args()
 
 # Init environment
@@ -88,7 +88,7 @@ def run_benchmark(benchmark_id: int):
     total = int(args.iterations)
     logger.info(f"Total tasks to run: {total}")
     start_time = time.time()
-    task = eval_dataset[0]
+    task = eval_dataset[int(args.task_id)]
 
     for idx in range(1, total + 1):
         iter_start = time.time()
@@ -99,12 +99,12 @@ def run_benchmark(benchmark_id: int):
         # 2 Create a reasoning
         analysis = ""
         if int(args.max_tokens) > 0:
-            analysis = janus.complete(prompt.replace("{analysis}",""), int(args.max_tokens), temperature=int(args.rtemperature))
+            analysis = janus.complete(prompt.replace("{analysis}",""), int(args.max_tokens), temperature=float(args.rtemperature))
             analysis = analysis.split("### Analysis")[1].strip()
 
         # 3 Perform Assesment
         prompt2 = prompt_class_pe_class.replace("{request}",task["request"]).replace("{response}",task["response"])
-        assesment = janus.complete(prompt2.replace("{analysis}", analysis), 1, temperature=int(args.ctemperature))
+        assesment = janus.complete(prompt2.replace("{analysis}", analysis), 1, temperature=float(args.ctemperature))
         try:
             assesment = int(assesment.split("### Result: ")[1].strip())
         except:

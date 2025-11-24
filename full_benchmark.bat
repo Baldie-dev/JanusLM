@@ -39,13 +39,24 @@ python src\benchmark.py --cpu --verbose --vuln HTTP_HEADERS --model-path E:\mode
 python src\benchmark.py --cpu --verbose --vuln HTTP_HEADERS --model-path E:\models\DeepSeek-R1-Distrill-Qwen-7B --label DeepSeek-R1-Distrill-Qwen-7B-500 --max-tokens 500
 # ------------------------------------------------------------------------ #
 
+# ------------------------------------------------------------------------ #
+# Temperature benchmarks
+python src\temperature_benchmark.py --cpu --verbose --lora-adapter Qwen3-1.7B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-1.7B --label Qwen3-1.7B-lora_200_1_1_0 --max-tokens 200 --rtemperature 1 --ctemperature 1 --iterations 50 --task-id 0
+python src\temperature_benchmark.py --cpu --verbose --lora-adapter Qwen3-1.7B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-1.7B --label Qwen3-1.7B-lora_200_1_1_1 --max-tokens 200 --rtemperature 1 --ctemperature 1 --iterations 50 --task-id 3
+
+python src\temperature_benchmark.py --cpu --verbose --lora-adapter Qwen3-1.7B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-1.7B --label Qwen3-1.7B-lora_200_0_0_0 --max-tokens 200 --rtemperature 0.01 --ctemperature 0.01 --iterations 50 --task-id 0
+python src\temperature_benchmark.py --cpu --verbose --lora-adapter Qwen3-1.7B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-1.7B --label Qwen3-1.7B-lora_200_0_0_1 --max-tokens 200 --rtemperature 0.01 --ctemperature 0.01 --iterations 50 --task-id 3
+
+python src\temperature_benchmark.py --cpu --verbose --lora-adapter Qwen3-1.7B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-1.7B --label Qwen3-1.7B-lora_200_16_16_0 --max-tokens 200 --rtemperature 1.6 --ctemperature 1.6 --iterations 50 --task-id 0
+python src\temperature_benchmark.py --cpu --verbose --lora-adapter Qwen3-1.7B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-1.7B --label Qwen3-1.7B-lora_200_16_16_1 --max-tokens 200 --rtemperature 1.6 --ctemperature 1.6 --iterations 50 --task-id 3
+
+python src\temperature_benchmark.py --cpu --verbose --lora-adapter Qwen3-1.7B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-1.7B --label Qwen3-1.7B-lora_200_16_0_0 --max-tokens 200 --rtemperature 1.6 --ctemperature 0 --iterations 50 --task-id 0
+python src\temperature_benchmark.py --cpu --verbose --lora-adapter Qwen3-1.7B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-1.7B --label Qwen3-1.7B-lora_200_16_0_1 --max-tokens 200 --rtemperature 1.6 --ctemperature 0 --iterations 50 --task-id 3
+# ------------------------------------------------------------------------ #
+
 # TO-DO
-python src\benchmark.py --cpu --verbose --lora-adapter Qwen3-4B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-4B --label Qwen3-4B-lora-500 --max-tokens 500
-python src\benchmark.py --cpu --verbose --lora-adapter Qwen3-1.7B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-1.7B --label Qwen3-1.7B-lora-500 --max-tokens 500
-python src\benchmark.py --cpu --verbose --lora-adapter DeepSeek-R1-Distrill-Qwen-7B-lora --vuln HTTP_HEADERS --model-path E:\models\DeepSeek-R1-Distrill-Qwen-7B --label DeepSeek-R1-Distrill-Qwen-7B-lora-300 --max-tokens 300 
-python src\benchmark.py --cpu --verbose --lora-adapter DeepSeek-R1-Distrill-Qwen-7B-lora --vuln HTTP_HEADERS --model-path E:\models\DeepSeek-R1-Distrill-Qwen-7B --label DeepSeek-R1-Distrill-Qwen-7B-lora-500 --max-tokens 500
+python src\benchmark.py --cpu --verbose --lora-adapter DeepSeek-R1-Distrill-Qwen-7B-lora --vuln HTTP_HEADERS --model-path E:\models\DeepSeek-R1-Distrill-Qwen-7B --label DeepSeek-R1-Distrill-Qwen-7B-lora-300 --max-tokens 300  && python src\benchmark.py --cpu --verbose --lora-adapter Qwen3-1.7B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-1.7B --label Qwen3-1.7B-lora-500 --max-tokens 500 && python src\benchmark.py --cpu --verbose --lora-adapter Qwen3-4B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-4B --label Qwen3-4B-lora-500 --max-tokens 500 && python src\benchmark.py --cpu --verbose --lora-adapter DeepSeek-R1-Distrill-Qwen-7B-lora --vuln HTTP_HEADERS --model-path E:\models\DeepSeek-R1-Distrill-Qwen-7B --label DeepSeek-R1-Distrill-Qwen-7B-lora-500 --max-tokens 500
+
 python src\benchmark.py --cpu --verbose --vuln HTTP_HEADERS --model-path E:\models\DeepSeek-R1-Distrill-Qwen-7B --label DeepSeek-R1-Distrill-Qwen-7B-500 --max-tokens 500
 
 
-
-python src\benchmark.py --cpu --verbose --lora-adapter Qwen3-1.7B-lora --vuln HTTP_HEADERS --model-path E:\models\Qwen3-1.7B --label Qwen3-1.7B-lora_200_1_1 --max-tokens 200 --rtemperature 1 --ctemperature 1 --iterations 50
