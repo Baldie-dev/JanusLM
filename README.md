@@ -135,23 +135,33 @@ The first stage of training focuses on improving the model's ability to perform 
 
 Example of the prompt used:
 ```
-You are an assistant who generates 1 paragraph long analysis from cyber security perspective of following reflected parameter: 
+> You are an assistant who generates 1 paragraph long analysis
+from cyber security perspective of following reflected parameter: 
 
-<p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+<p>Search results for: <span>"><script>alert('document.domain')
+</script></span></p>
 ```
 
 Example of analysis for **base model**, indicating that model fails to understand and generate analysis.
 ```
-You are an assistant who generates 1 paragraph long analysis from cyber security perspective of following reflected parameter.
+You are an assistant who generates 1 paragraph long analysis from
+cyber security perspective of following reflected parameter.
 
-User:<p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+User:<p>Search results for: <p>Search results for:
+<span>"><script>alert('document.domain')</script></span></p>
 
-Assistant: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
-User: <p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
-Assistant: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
-User: <p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
-Assistant: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
-User: <p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+Assistant: <p>Search results for: <span>"><script>alert('document.
+domain')</script></span></p>
+User: <p>Search results for: <p>Search results for: 
+<span>"><script>alert('document.domain')</script></span></p>
+Assistant: <p>Search results for: <span>"><script>alert('document.
+domain')</script></span></p>
+User: <p>Search results for: <p>Search results for: 
+<span>"><script>alert('document.domain')</script></span></p>
+Assistant: <p>Search results for: <span>"><script>alert('document.
+domain')</script></span></p>
+User: <p>Search results for: <p>Search results for: 
+<span>"><script>alert('document.domain')</script></span></p>
 ```
 
 Example of analysis performed by same **fine-tuned model**:
@@ -160,7 +170,22 @@ You are an assistant who generates 1 paragraph long analysis from cyber security
 
 User:<p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
 
-Assistant: The reflected parameter `<p>Search results for: <span>"><script>alert('document.domain')</script></span></p>` represents a classic example of a reflected Cross-Site Scripting (XSS) vulnerability. From a cybersecurity perspective, this occurs because user-supplied input is directly injected into the HTML response without proper sanitization or encoding. The injected `<script>` tag allows arbitrary JavaScript execution in the context of the victim's browser, which in this case displays the `document.domain`. An attacker could exploit this to hijack sessions, steal sensitive cookies, perform keylogging, or redirect users to malicious sites. The presence of the quote (`"`) before the `<script>` tag indicates that inline scripting is enabled, which is a common security bypass. Without proper encoding or filtering, this allows arbitrary dynamic content to be displayed in the browser, potentially leading to a malicious user experience or even unauthorized actions. Proper mitigation...
+Assistant: The reflected parameter `<p>Search results for: 
+<span>"><script>alert('document.domain')</script></span></p>` 
+represents a classic example of a reflected Cross-Site Scripting 
+(XSS) vulnerability. From a cybersecurity perspective, this occurs
+ because user-supplied input is directly injected into the HTML 
+ response without proper sanitization or encoding. The injected 
+ `<script>` tag allows arbitrary JavaScript execution in the 
+ context of the victim's browser, which in this case displays the 
+ `document.domain`. An attacker could exploit this to hijack 
+ sessions, steal sensitive cookies, perform keylogging, or 
+ redirect users to malicious sites. The presence of the quote 
+ (`"`) before the `<script>` tag indicates that inline scripting 
+ is enabled, which is a common security bypass. Without proper 
+ encoding or filtering, this allows arbitrary dynamic content to 
+ be displayed in the browser, potentially leading to a malicious 
+ user experience or even unauthorized actions. Proper mitigation...
 ```
 
 ### Description
@@ -229,30 +254,32 @@ Evaluation was performed using a cross-validation technique (80/20) by splitting
 
 Since LLMs are not deterministic, there is always a non‑zero chance that an analysis will be incorrect or that a classification will fail.
 
+*Note: Adding technique for improving accuracy by generating multiple responses to produce confidence level.*
+
 ## Temperature Influence
 
-*Note: To add section about temperature influence on analysis*
+Temperature affects the rate of errors produced during analysis or classification, but it may also improve accuracy by encouraging greater diversity in the model's outputs. At lower temperatures, the model produces more deterministic and repetitive results, which can reduce variability but may also limit creativity or nuanced reasoning. At higher temperatures, the model explores a wider range of possible outputs, which increases the likelihood of novel or insightful responses but also raises the risk of inconsistency or error.
 
-### Metrics
+## Metrics
 Definition of terms:
 - $TP$ - True Positive, correctly marked finding.
 - $FP$ - False Positive, incorrectly marked finding.
 - $TN$ - True Negative, correctly marked HTTP response as secure.
 - $FN$ - False Negative, missed finding.
 
-#### Precision
+### Precision
 
 Calculation of how many marked findings were actually correct as we want to limit the number of false-positive the agent generates. Precision in the end will be more important than overall accuracy.
 
 $$Precision = \frac{TP}{TP+FP}$$
 
-#### Accuracy
+### Accuracy
 
 Overall correctness:
 
 $$Accuracy = \frac{TP+TN}{TP+FP+TN+FN}$$
 
-#### Control
+### Control
 
 This metric measures the extent to which we allow controllability over the use of compute, meaning that this metric help us to dynamically adjust the amount of computation allocated to the problem during inference.
 
@@ -260,7 +287,7 @@ $$ Control = \frac{1}{|A|}\sum_{a\subset A}{(a_{min} \le a \le a_{max})}$$
 
 where $a{min}$ and $a{max}$ represents minimum and maximum number of generated token (test-time).
 
-#### Scaling
+### Scaling
 
 This metric measures how performance (accuracy or precision) improves as a test-time compute is increased.
 
