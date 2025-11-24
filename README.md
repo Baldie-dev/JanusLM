@@ -166,9 +166,11 @@ User: <p>Search results for: <p>Search results for:
 
 Example of analysis performed by same **fine-tuned model**:
 ```
-You are an assistant who generates 1 paragraph long analysis from cyber security perspective of following reflected parameter.
+You are an assistant who generates 1 paragraph long analysis from
+cyber security perspective of following reflected parameter.
 
-User:<p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>
+User:<p>Search results for: <p>Search results for: 
+<span>"><script>alert('document.domain')</script></span></p>
 
 Assistant: The reflected parameter `<p>Search results for: 
 <span>"><script>alert('document.domain')</script></span></p>` 
@@ -259,6 +261,9 @@ Since LLMs are not deterministic, there is always a non‑zero chance that an an
 ## Temperature Influence
 
 Temperature affects the rate of errors produced during analysis or classification, but it may also improve accuracy by encouraging greater diversity in the model's outputs. At lower temperatures, the model produces more deterministic and repetitive results, which can reduce variability but may also limit creativity or nuanced reasoning. At higher temperatures, the model explores a wider range of possible outputs, which increases the likelihood of novel or insightful responses but also raises the risk of inconsistency or error.
+
+Following charts shows the variability in assesment accuracy based on temperature:
+![accuracy-by-temperature](imgs/accuracy-by-temperature-benchmark.png)
 
 ## Metrics
 Definition of terms:

@@ -244,9 +244,80 @@ def print_benchmark_stats(stats):
     for stat in stats:
         print(f"{stat['label']:<25} {stat['total_tasks']:<15} {stat['correct_matches']:<10} {stat['incorrect_matches']:<12} {stat['accuracy_rate']:<15} {stat['false_positive_rate']:<15}")
 
+def plot_grouped_stacked_bars(groups,bar_labels, xaxis, yaxis, title, filename):
+    mpl.rcParams['text.usetex'] = False
+    plt.rc('text', usetex=False)
+    mpl.style.use("science")
+    fig, ax = plt.subplots(figsize=(10,6))
+    ax.grid(True, zorder=0, linewidth=0.4) 
+    ax.set_axisbelow(True)
+    plt.rcParams.update({'font.size': 14})
+    plt.style.use('science')
+
+    colors = Utils.colors_gr
+
+    n_groups = len(groups)
+    n_bars_per_group = len(groups[0]["bars"])
+    indices = np.arange(n_groups)
+    bar_width = 0.35
+
+    # Loop over bars in each group
+    for j in range(n_bars_per_group):
+        bottoms = np.zeros(n_groups)
+        for i in range(len(groups[0]["bars"][j])):  # number of stacked parts
+            values = [group["bars"][j][i] for group in groups]
+            plt.bar(indices + j * (bar_width+0.02), values,
+                    width=bar_width,
+                    bottom=bottoms,
+                    color=colors[(i) % len(colors)],
+                    label=bar_labels[j][i])
+            bottoms += values
+
+    plt.xlabel(xaxis, fontsize=14)
+    plt.ylabel(yaxis, fontsize=14)
+    plt.xticks(indices + bar_width/2,
+               [group["label"] for group in groups],
+               fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.title(title, fontsize=15)
+    plt.legend(fontsize=14)
+    plt.grid(True, axis='y')
+    plt.tight_layout()
+    output_path = 'imgs/' + filename + '-benchmark.png'
+    plt.savefig(output_path)
+    plt.close()
+
+def get_benchmark_stat_by_label(stats, label):
+    for stat in stats:
+        if stat["label"] == label:
+            return stat
+
+def get_temperature_stat(stats, name):
+    return [get_benchmark_stat_by_label(stats, name)["correct_matches"], get_benchmark_stat_by_label(stats,name)["incorrect_matches"]]
+
+def plot_benchmark_temperature(stats):
+    groups = [
+            {"label": "T=0.01", "bars": [[1,1], [1,1]]},  
+            {"label": "T=1", "bars": [[1,1], [1,1]]},
+            {"label": "T=1.6", "bars": [[1,1],[1,1]]}
+        ]
+    bar_labels = [
+        ["Task 1 - correct","Task 1 - incorrect"],
+        ["Task 2 - correct","Task 2 - incorrect"],
+    ]
+    groups[0]["bars"][0] = get_temperature_stat(stats, "Qwen3-1.7B-lora_200_0_0_0")
+    groups[0]["bars"][1] = get_temperature_stat(stats, "Qwen3-1.7B-lora_200_0_0_1")
+    groups[1]["bars"][0] = get_temperature_stat(stats, "Qwen3-1.7B-lora_200_1_1_0")
+    groups[1]["bars"][1] = get_temperature_stat(stats, "Qwen3-1.7B-lora_200_1_1_1")
+    groups[2]["bars"][0] = get_temperature_stat(stats, "Qwen3-1.7B-lora_200_16_16_0")
+    groups[2]["bars"][1] = get_temperature_stat(stats, "Qwen3-1.7B-lora_200_16_16_1")
+
+    plot_grouped_stacked_bars(groups, bar_labels, "Temperature", "Number of correct assesments", "Accuracy by Temperature", "accuracy-by-temperature")
+
 stats = get_benchmark_accuracy()
 stats2 = get_benchmark2_accuracy()
 print(stats2)
 # print_benchmark_stats(stats)
 # plot_benchmark_accuracy(stats)
 # plot_benchmark_lora_improvment(stats)
+plot_benchmark_temperature(stats2)

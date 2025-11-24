@@ -43,6 +43,9 @@ prompt_grpo_reward = Utils.load_prompt("grpo_reward_function.txt", documents)
 system = "You are an assistant who generates 1 paragraph long analysis from cyber security perspective of following reflected parameter."
 prompt = '''<p>Search results for: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>'''
 
+#system = "You are an assistant and you should perform analysis."
+#prompt = '''<p>Search results for: <span>"><script>alert('document.domain')</script></span></p>'''
+
 # Measure janus.complete
 start = time.perf_counter()
 resp_complete = janus.complete_template(system, prompt, max_tokens=200)

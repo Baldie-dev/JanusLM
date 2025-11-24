@@ -12,7 +12,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 model_path = "C:/Users/micha/Downloads/ollama-3.1-1B"
 #model_path = "E:/models/Qwen3-4B"
-lora_adapter = "lora_adapter_direct_class"
+lora_adapter = "./test-lora2"
 device = "cpu"
 batch_size = 1
 threads = 1
@@ -47,7 +47,7 @@ optimizer = AdamW(model.parameters(), lr=2e-4)
 
 max_trainning_steps = 100
 training_args = TrainingArguments(
-            output_dir="./test-lora2",
+            output_dir=lora_adapter,
             per_device_train_batch_size=1,
             max_steps=max_trainning_steps,
             learning_rate=2e-4,
@@ -63,12 +63,12 @@ training_args = TrainingArguments(
 print("Tokenizing dataset...")
 system = "You are an assistant who generates 1 paragraph long analysis from cyber security perspective of following reflected parameter.\n"
 prompts = [
-    system + """User:<p>Search results for: <span>"><script>alert('document.domain')</script></span></p>""",
-    system + """User:<div>Username: <img src=x onerror=alert('document.domain')></div>""",
-    system + """User:<input value="test" onfocus=alert('document.domain')>""",
-    system + """User:<a href='javascript:alert("document.domain")'>Click me</a>""",
-    system + """User:<svg/onload=alert('document.domain')>""",
-    system + """User:<iframe src="javascript:alert('document.domain')"></iframe>""",
+    system + """User: <p>Search results for: <span>"><script>alert('document.domain')</script></span></p>""",
+    system + """User: <div>Username: <img src=x onerror=alert('document.domain')></div>""",
+    system + """User: <input value="test" onfocus=alert('document.domain')>""",
+    system + """User: <a href='javascript:alert("document.domain")'>Click me</a>""",
+    system + """User: <svg/onload=alert('document.domain')>""",
+    system + """User: <iframe src="javascript:alert('document.domain')"></iframe>""",
 ]
 answers = [
     """Assistant: The reflected parameter `<p>Search results for: <span>"><script>alert('document.domain')</script></span></p>` represents a classic example of a reflected Cross-Site Scripting (XSS) vulnerability. From a cybersecurity perspective, this occurs because user-supplied input is directly injected into the HTML response without proper encoding or sanitization. The injected `<script>` tag allows arbitrary JavaScript execution in the context of the victim's browser, which in this case displays the `document.domain`. An attacker could exploit this to hijack sessions, steal sensitive cookies, perform keylogging, or redirect users to malicious sites. The presence of the quote (`"`) before the `<script>` tag indicates potential attribute injection, which could allow even more complex payloads to bypass naive filtering. Mitigation should include rigorous output encoding, input validation, and implementing Content Security Policy (CSP) headers to limit script execution.""",

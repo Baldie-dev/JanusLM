@@ -5,7 +5,8 @@ from datasets import Dataset
 
 class Utils:
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'] 
-    
+    colors_gr = ['#2ca02c', '#d62728'] 
+
     @staticmethod
     def get_vulnerabilities():
         return [
