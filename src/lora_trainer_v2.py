@@ -7,15 +7,28 @@ import csv
 from utils import Utils
 from transformers import AutoTokenizer
 
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
+parser = argparse.ArgumentParser()
+parser.add_argument("--cpu", action="store_true", required=False, help="Safe and slow training on CPU, for compatibility reasons")
+parser.add_argument("--model", default="C:/Users/micha/Downloads/ollama-3.1-1B", required=True, help="Path to the base model folder.")
+parser.add_argument("--threads", default=1, required=False, help="Number of threats for CPU")
+parser.add_argument("--output", default="lora-adapter", required=False, help="output folder for trained model")
+parser.add_argument("--verbose", action="store_true", required=False, help="Verbose output during training")
+parser.add_argument("--steps", required=False, default=50, help="Number of training steps")
+parser.add_argument("--vuln", required=True, choices=Utils.get_vuln_choices(), help="Select category of vulnerability")
+args = parser.parse_args()
 
-model_path = "C:/Users/micha/Downloads/ollama-3.1-1B"
-#model_path = "E:/models/Qwen3-4B"
-lora_adapter = "./test-lora2"
-device = "cpu"
-batch_size = 1
-threads = 1
+if args.cpu:
+    datasets.disable_caching()
+    os.environ["OMP_NUM_THREADS"] = "1"
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    batch_size = 1
+    threads = 1
+
+load_dotenv()
+model_path = args.model
+lora_adapter = args.output
+device = "cpu" if args.cpu else "auto"
+
 
 tokenizer = AutoTokenizer.from_pretrained(model_path, device_map=device)
 base_model = AutoModelForCausalLM.from_pretrained(model_path, device_map=device)
@@ -45,7 +58,7 @@ data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False, 
 model.train()
 optimizer = AdamW(model.parameters(), lr=2e-4)
 
-max_trainning_steps = 100
+max_trainning_steps = int(args.steps)
 training_args = TrainingArguments(
             output_dir=lora_adapter,
             per_device_train_batch_size=1,
